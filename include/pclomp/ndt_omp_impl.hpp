@@ -140,6 +140,9 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransform
       return;
     }
 
+    delta_p_norm(0) = delta_p_norm(1) = delta_p_norm(5) = 0;
+    score_gradient(0) = score_gradient(1) = score_gradient(5) = 0;
+
     delta_p.normalize ();
     delta_p_norm = computeStepLengthMT (p, delta_p, delta_p_norm, step_size_, transformation_epsilon_ / 2, score, score_gradient, hessian, output);
     delta_p *= delta_p_norm;
