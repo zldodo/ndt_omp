@@ -44,6 +44,9 @@
 #include <pcl/registration/boost.h>
 #include <pcl/registration/exceptions.h>
 
+#define omp_get_max_threads()   4
+#define omp_get_thread_num()    4
+
 ////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget>
 template<typename PointT> void

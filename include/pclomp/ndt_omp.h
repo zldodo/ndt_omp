@@ -47,6 +47,9 @@
 
 #include <unsupported/Eigen/NonLinearOptimization>
 
+#define omp_get_max_threads()   4
+#define omp_get_thread_num()    4
+
 namespace pclomp
 {
 	enum NeighborSearchMethod {
