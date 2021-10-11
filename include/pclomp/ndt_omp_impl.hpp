@@ -303,7 +303,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
 	}
 
 	if (regularization_pose_) {
-		double regularization_score(0.0);
+		float regularization_score = 0.0f;
 		Eigen::Matrix<double, 6, 1> regularization_gradient = Eigen::Matrix<double, 6, 1>::Zero();
 		Eigen::Matrix<double, 6, 6> regularization_hessian = Eigen::Matrix<double, 6, 6>::Zero();
 
