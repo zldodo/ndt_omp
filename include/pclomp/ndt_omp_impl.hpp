@@ -307,20 +307,21 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
 		Eigen::Matrix<double, 6, 1> regularization_gradient = Eigen::Matrix<double, 6, 1>::Zero();
 		Eigen::Matrix<double, 6, 6> regularization_hessian = Eigen::Matrix<double, 6, 6>::Zero();
 
-		double dx = regularization_pose_translation_(0) - p(0, 0);
-		double dy = regularization_pose_translation_(1) - p(1, 0);
-		double sin_yaw = sin(p(5, 0));
-		double cos_yaw = cos(p(5, 0));
-		double longitudinal_distance = dy * sin_yaw + dx * cos_yaw;
+		const float dx = regularization_pose_translation_(0) - static_cast<float>(p(0, 0));
+		const float dy = regularization_pose_translation_(1) - static_cast<float>(p(1, 0));
+		const auto sin_yaw = static_cast<float>(sin(p(5, 0)));
+		const auto cos_yaw = static_cast<float>(cos(p(5, 0)));
+		const float longitudinal_distance = dy * sin_yaw + dx * cos_yaw;
+		const auto neighborhood_count_weight = static_cast<float>(total_neighborhood_count);
 
-		regularization_score = - regularization_scale_factor_ * (double)total_neighborhood_count * longitudinal_distance * longitudinal_distance;
+		regularization_score = - regularization_scale_factor_ * neighborhood_count_weight * longitudinal_distance * longitudinal_distance;
 
-		regularization_gradient(0, 0) = regularization_scale_factor_ * (double)total_neighborhood_count * 2.0 * cos_yaw * longitudinal_distance;
-		regularization_gradient(1, 0) = regularization_scale_factor_ * (double)total_neighborhood_count * 2.0 * sin_yaw * longitudinal_distance;
+		regularization_gradient(0, 0) = regularization_scale_factor_ * neighborhood_count_weight * 2.0f * cos_yaw * longitudinal_distance;
+		regularization_gradient(1, 0) = regularization_scale_factor_ * neighborhood_count_weight * 2.0f * sin_yaw * longitudinal_distance;
 
-		regularization_hessian(0, 0) = - regularization_scale_factor_ * (double)total_neighborhood_count * 2.0 * cos_yaw * cos_yaw;
-		regularization_hessian(0, 1) = - regularization_scale_factor_ * (double)total_neighborhood_count * 2.0 * cos_yaw * sin_yaw;
-		regularization_hessian(1, 1) = - regularization_scale_factor_ * (double)total_neighborhood_count * 2.0 * sin_yaw * sin_yaw;
+		regularization_hessian(0, 0) = - regularization_scale_factor_ * neighborhood_count_weight * 2.0f * cos_yaw * cos_yaw;
+		regularization_hessian(0, 1) = - regularization_scale_factor_ * neighborhood_count_weight * 2.0f * cos_yaw * sin_yaw;
+		regularization_hessian(1, 1) = - regularization_scale_factor_ * neighborhood_count_weight * 2.0f * sin_yaw * sin_yaw;
 		regularization_hessian(1, 0) = regularization_hessian(0, 1);
 
 		score += regularization_score;

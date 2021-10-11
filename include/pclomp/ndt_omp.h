@@ -265,7 +265,7 @@ namespace pclomp
 		// lower is better
 		double calculateScore(const PointCloudSource& cloud) const;
 
-		inline void setRegularizationScaleFactor(double regularization_scale_factor)
+		inline void setRegularizationScaleFactor(float regularization_scale_factor)
 		{
 			regularization_scale_factor_ = regularization_scale_factor;
 		}
@@ -541,15 +541,14 @@ namespace pclomp
 	Eigen::Matrix<double, 6, 6> hessian_;
 	std::vector<Eigen::Matrix4f> transformation_array_;
 
+	float regularization_scale_factor_;
+	boost::optional<Eigen::Matrix4f> regularization_pose_;
+	Eigen::Vector3f regularization_pose_translation_;
+
 	public:
 		NeighborSearchMethod search_method;
 
 		EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
-	private:
-		double regularization_scale_factor_;
-		boost::optional<Eigen::Matrix4f> regularization_pose_;
-		Eigen::Vector3f regularization_pose_translation_;
 	};
 
 }
