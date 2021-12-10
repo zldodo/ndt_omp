@@ -1,4 +1,4 @@
-#include <pclomp/voxel_grid_covariance_omp.h>
+#include <pclomp/voxel_grid_covariance_omp.hpp>
 #include <pclomp/voxel_grid_covariance_omp_impl.hpp>
 
 template class pclomp::VoxelGridCovariance<pcl::PointXYZ>;
