@@ -67,9 +67,9 @@ pclomp::VoxelGridCovariance<PointT>::applyFilter (PointCloud &output)
   Eigen::Vector4f min_p, max_p;
   // Get the minimum and maximum dimensions
   if (!filter_field_name_.empty ()) // If we don't want to process the entire cloud...
-      pcl::getMinMax3D<PointT> (input_, filter_field_name_, static_cast<float> (filter_limit_min_), static_cast<float> (filter_limit_max_), min_p, max_p, filter_limit_negative_);
+    pcl::getMinMax3D<PointT> (input_, filter_field_name_, static_cast<float> (filter_limit_min_), static_cast<float> (filter_limit_max_), min_p, max_p, filter_limit_negative_);
   else
-	  pcl::getMinMax3D<PointT> (*input_, min_p, max_p);
+    pcl::getMinMax3D<PointT> (*input_, min_p, max_p);
 
   // Check that the leaf size is not too small, given the size of the data
   int64_t dx = static_cast<int64_t>((max_p[0] - min_p[0]) * inverse_leaf_size_[0])+1;
@@ -97,7 +97,7 @@ pclomp::VoxelGridCovariance<PointT>::applyFilter (PointCloud &output)
 
   // Clear the leaves
   leaves_.clear ();
-//  leaves_.reserve(8192);
+  //  leaves_.reserve(8192);
 
   // Set up the division multiplier
   divb_mul_ = Eigen::Vector4i (1, div_b_[0], div_b_[0] * div_b_[1], 0);
@@ -373,63 +373,63 @@ pclomp::VoxelGridCovariance<PointT>::applyFilter (PointCloud &output)
 template<typename PointT> int
 pclomp::VoxelGridCovariance<PointT>::getNeighborhoodAtPoint(const Eigen::MatrixXi& relative_coordinates, const PointT& reference_point, std::vector<LeafConstPtr> &neighbors) const
 {
-	neighbors.clear();
+  neighbors.clear();
 
-	// Find displacement coordinates
-	Eigen::Vector4i ijk(static_cast<int> (floor(reference_point.x / leaf_size_[0])),
-		static_cast<int> (floor(reference_point.y / leaf_size_[1])),
-		static_cast<int> (floor(reference_point.z / leaf_size_[2])), 0);
-	Eigen::Array4i diff2min = min_b_ - ijk;
-	Eigen::Array4i diff2max = max_b_ - ijk;
-	neighbors.reserve(relative_coordinates.cols());
+  // Find displacement coordinates
+  Eigen::Vector4i ijk(static_cast<int> (floor(reference_point.x / leaf_size_[0])),
+                      static_cast<int> (floor(reference_point.y / leaf_size_[1])),
+                      static_cast<int> (floor(reference_point.z / leaf_size_[2])), 0);
+  Eigen::Array4i diff2min = min_b_ - ijk;
+  Eigen::Array4i diff2max = max_b_ - ijk;
+  neighbors.reserve(relative_coordinates.cols());
 
-	// Check each neighbor to see if it is occupied and contains sufficient points
-	// Slower than radius search because needs to check 26 indices
-	for (int ni = 0; ni < relative_coordinates.cols(); ni++)
-	{
-		Eigen::Vector4i displacement = (Eigen::Vector4i() << relative_coordinates.col(ni), 0).finished();
-		// Checking if the specified cell is in the grid
-		if ((diff2min <= displacement.array()).all() && (diff2max >= displacement.array()).all())
-		{
-			auto leaf_iter = leaves_.find(((ijk + displacement - min_b_).dot(divb_mul_)));
-			if (leaf_iter != leaves_.end() && leaf_iter->second.nr_points >= min_points_per_voxel_)
-			{
-				LeafConstPtr leaf = &(leaf_iter->second);
-				neighbors.push_back(leaf);
-			}
-		}
-	}
+  // Check each neighbor to see if it is occupied and contains sufficient points
+  // Slower than radius search because needs to check 26 indices
+  for (int ni = 0; ni < relative_coordinates.cols(); ni++)
+  {
+    Eigen::Vector4i displacement = (Eigen::Vector4i() << relative_coordinates.col(ni), 0).finished();
+    // Checking if the specified cell is in the grid
+    if ((diff2min <= displacement.array()).all() && (diff2max >= displacement.array()).all())
+    {
+      auto leaf_iter = leaves_.find(((ijk + displacement - min_b_).dot(divb_mul_)));
+      if (leaf_iter != leaves_.end() && leaf_iter->second.nr_points >= min_points_per_voxel_)
+      {
+        LeafConstPtr leaf = &(leaf_iter->second);
+        neighbors.push_back(leaf);
+      }
+    }
+  }
 
-	return (static_cast<int> (neighbors.size()));
+  return (static_cast<int> (neighbors.size()));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
 template<typename PointT> int
 pclomp::VoxelGridCovariance<PointT>::getNeighborhoodAtPoint(const PointT& reference_point, std::vector<LeafConstPtr> &neighbors) const
 {
-	neighbors.clear();
+  neighbors.clear();
 
-	// Find displacement coordinates
-	Eigen::MatrixXi relative_coordinates = pcl::getAllNeighborCellIndices();
-	return getNeighborhoodAtPoint(relative_coordinates, reference_point, neighbors);
+  // Find displacement coordinates
+  Eigen::MatrixXi relative_coordinates = pcl::getAllNeighborCellIndices();
+  return getNeighborhoodAtPoint(relative_coordinates, reference_point, neighbors);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
 template<typename PointT> int
 pclomp::VoxelGridCovariance<PointT>::getNeighborhoodAtPoint7(const PointT& reference_point, std::vector<LeafConstPtr> &neighbors) const
 {
-	neighbors.clear();
+  neighbors.clear();
 
-	Eigen::MatrixXi relative_coordinates(3, 7);
-	relative_coordinates.setZero();
-	relative_coordinates(0, 1) = 1;
-	relative_coordinates(0, 2) = -1;
-	relative_coordinates(1, 3) = 1;
-	relative_coordinates(1, 4) = -1;
-	relative_coordinates(2, 5) = 1;
-	relative_coordinates(2, 6) = -1;
+  Eigen::MatrixXi relative_coordinates(3, 7);
+  relative_coordinates.setZero();
+  relative_coordinates(0, 1) = 1;
+  relative_coordinates(0, 2) = -1;
+  relative_coordinates(1, 3) = 1;
+  relative_coordinates(1, 4) = -1;
+  relative_coordinates(2, 5) = 1;
+  relative_coordinates(2, 6) = -1;
 
-	return getNeighborhoodAtPoint(relative_coordinates, reference_point, neighbors);
+  return getNeighborhoodAtPoint(relative_coordinates, reference_point, neighbors);
 }
 
 
@@ -437,8 +437,8 @@ pclomp::VoxelGridCovariance<PointT>::getNeighborhoodAtPoint7(const PointT& refer
 template<typename PointT> int
 pclomp::VoxelGridCovariance<PointT>::getNeighborhoodAtPoint1(const PointT& reference_point, std::vector<LeafConstPtr> &neighbors) const
 {
-	neighbors.clear();
-	return getNeighborhoodAtPoint(Eigen::MatrixXi::Zero(3,1), reference_point, neighbors);
+  neighbors.clear();
+  return getNeighborhoodAtPoint(Eigen::MatrixXi::Zero(3,1), reference_point, neighbors);
 }
 
 

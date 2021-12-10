@@ -48,8 +48,8 @@
 template <typename PointSource, typename PointTarget>
 template<typename PointT> void
 pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::computeCovariances(typename pcl::PointCloud<PointT>::ConstPtr cloud,
-                                                                                    const typename pcl::search::KdTree<PointT>::ConstPtr kdtree,
-                                                                                    MatricesVector& cloud_covariances)
+                                                                                       const typename pcl::search::KdTree<PointT>::ConstPtr kdtree,
+                                                                                       MatricesVector& cloud_covariances)
 {
   if (k_correspondences_ > int (cloud->size ()))
   {
@@ -64,7 +64,7 @@ pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::computeCovar
   std::vector<std::vector<int>> nn_indices_array(omp_get_max_threads());
   std::vector<std::vector<float>> nn_dist_sq_array(omp_get_max_threads());
 
-  #pragma omp parallel for
+#pragma omp parallel for
   for(std::size_t i=0; i < cloud->size(); i++) {
     auto& nn_indices = nn_indices_array[omp_get_thread_num()];
     auto& nn_dist_sq = nn_dist_sq_array[omp_get_thread_num()];
@@ -179,10 +179,10 @@ pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::computeRDeri
 ////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointSource, typename PointTarget> void
 pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::estimateRigidTransformationBFGS (const PointCloudSource &cloud_src,
-                                                                                                  const std::vector<int> &indices_src,
-                                                                                                  const PointCloudTarget &cloud_tgt,
-                                                                                                  const std::vector<int> &indices_tgt,
-                                                                                                  Eigen::Matrix4f &transformation_matrix)
+                                                                                                     const std::vector<int> &indices_src,
+                                                                                                     const PointCloudTarget &cloud_tgt,
+                                                                                                     const std::vector<int> &indices_tgt,
+                                                                                                     Eigen::Matrix4f &transformation_matrix)
 {
   if (indices_src.size () < 4)     // need at least 4 samples
   {
@@ -251,7 +251,7 @@ pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::Optimization
   std::vector<double> f_array(omp_get_max_threads(), 0.0);
 
   int m = static_cast<int> (gicp_->tmp_idx_src_->size ());
-  #pragma omp parallel for
+#pragma omp parallel for
   for(int i = 0; i < m; ++i)
   {
     // The last coordinate, p_src[3] is guaranteed to be set to 1.0 in registration.hpp
@@ -262,13 +262,13 @@ pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::Optimization
     // The last coordinate is still guaranteed to be set to 1.0
     // Eigen::AlignedVector3<double> res(pp[0] - p_tgt[0], pp[1] - p_tgt[1], pp[2] - p_tgt[2]);
     // Eigen::AlignedVector3<double> temp(gicp_->mahalanobis((*gicp_->tmp_idx_src_)[i]) * res);
-	Eigen::Vector4f res = transformation_matrix * p_src - p_tgt;
-	Eigen::Matrix4f maha = gicp_->mahalanobis((*gicp_->tmp_idx_src_)[i]);
+    Eigen::Vector4f res = transformation_matrix * p_src - p_tgt;
+    Eigen::Matrix4f maha = gicp_->mahalanobis((*gicp_->tmp_idx_src_)[i]);
     // Eigen::Vector4d temp(maha * res);
     // increment= res'*temp/num_matches = temp'*M*temp/num_matches (we postpone 1/num_matches after the loop closes)
     // double ret = double(res.transpose() * temp);
-	double ret = res.dot(maha*res);
-	f_array[omp_get_thread_num()] += ret;
+    double ret = res.dot(maha*res);
+    f_array[omp_get_thread_num()] += ret;
   }
   f = std::accumulate(f_array.begin(), f_array.end(), 0.0);
   return f/m;
@@ -285,12 +285,12 @@ pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::Optimization
   std::vector<Eigen::Vector4d, Eigen::aligned_allocator<Eigen::Vector4d>> g_array(omp_get_max_threads());
 
   for (std::size_t i = 0; i < R_array.size(); i++) {
-	  R_array[i].setZero();
-	  g_array[i].setZero();
+    R_array[i].setZero();
+    g_array[i].setZero();
   }
 
   int m = static_cast<int> (gicp_->tmp_idx_src_->size ());
-  #pragma omp parallel for
+#pragma omp parallel for
   for(int i = 0; i < m; ++i)
   {
     // The last coordinate, p_src[3] is guaranteed to be set to 1.0 in registration.hpp
@@ -303,7 +303,7 @@ pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::Optimization
     Eigen::Vector4d res(pp[0] - p_tgt[0], pp[1] - p_tgt[1], pp[2] - p_tgt[2], 0.0);
     // temp = M*res
 
-	Eigen::Matrix4d maha = gicp_->mahalanobis((*gicp_->tmp_idx_src_)[i]).template cast<double>();
+    Eigen::Matrix4d maha = gicp_->mahalanobis((*gicp_->tmp_idx_src_)[i]).template cast<double>();
 
     Eigen::Vector4d temp(maha * res);
     // Increment translation gradient
@@ -319,8 +319,8 @@ pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::Optimization
   g.setZero();
   Eigen::Matrix4d R = Eigen::Matrix4d::Zero();
   for (std::size_t i = 0; i < R_array.size(); i++) {
-	  R += R_array[i];
-	  g.head<3>() += g_array[i].head<3>();
+    R += R_array[i];
+    g.head<3>() += g_array[i].head<3>();
   }
 
   g.head<3>() *= 2.0 / m;
@@ -418,7 +418,7 @@ pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::computeTrans
 
     const Eigen::Matrix3d R = transform_R.topLeftCorner<3,3> ();
 
-    #pragma omp parallel for
+#pragma omp parallel for
     for (std::size_t i = 0; i < N; i++)
     {
       auto& nn_indices = nn_indices_array[omp_get_thread_num()];
@@ -439,9 +439,9 @@ pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::computeTrans
         const Eigen::Matrix3d &C1 = (*input_covariances_)[i];
         const Eigen::Matrix3d &C2 = (*target_covariances_)[nn_indices[0]];
         Eigen::Matrix4f& M_ = mahalanobis_[i];
-		M_.setZero();
+        M_.setZero();
 
-		Eigen::Matrix3d M = M_.block<3, 3>(0, 0).cast<double>();
+        Eigen::Matrix3d M = M_.block<3, 3>(0, 0).cast<double>();
         // M = R*C1
         M = R * C1;
         // temp = M*R' + C2 = R*C1*R' + C2
@@ -449,7 +449,7 @@ pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::computeTrans
         temp+= C2;
         // M = temp^-1
         M = temp.inverse ();
-		M_.block<3, 3>(0, 0) = M.cast<float>();
+        M_.block<3, 3>(0, 0) = M.cast<float>();
         int c = cnt++;
         source_indices[c] = static_cast<int> (i);
         target_indices[c] = nn_indices[0];
@@ -521,8 +521,8 @@ pclomp::GeneralizedIterativeClosestPoint<PointSource, PointTarget>::applyState(E
   // !!! CAUTION Stanford GICP uses the Z Y X euler angles convention
   Eigen::Matrix3f R;
   R = Eigen::AngleAxisf (static_cast<float> (x[5]), Eigen::Vector3f::UnitZ ())
-    * Eigen::AngleAxisf (static_cast<float> (x[4]), Eigen::Vector3f::UnitY ())
-    * Eigen::AngleAxisf (static_cast<float> (x[3]), Eigen::Vector3f::UnitX ());
+      * Eigen::AngleAxisf (static_cast<float> (x[4]), Eigen::Vector3f::UnitY ())
+      * Eigen::AngleAxisf (static_cast<float> (x[3]), Eigen::Vector3f::UnitX ());
   t.topLeftCorner<3,3> ().matrix () = R * t.topLeftCorner<3,3> ().matrix ();
   Eigen::Vector4f T (static_cast<float> (x[0]), static_cast<float> (x[1]), static_cast<float> (x[2]), 0.0f);
   t.col (3) += T;
