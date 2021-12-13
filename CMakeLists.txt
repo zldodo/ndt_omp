@@ -29,7 +29,6 @@ find_package(OpenMP)
 ament_auto_add_library(ndt_omp SHARED
   src/pclomp/voxel_grid_covariance_omp.cpp
   src/pclomp/ndt_omp.cpp
-  src/pclomp/gicp_omp.cpp
 )
 
 target_link_libraries(ndt_omp PUBLIC ${PCL_LIBRARIES})
