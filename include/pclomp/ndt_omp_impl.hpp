@@ -112,11 +112,12 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransform
   transformation_array_.push_back(final_transformation_);
 
   // Convert initial guess matrix to 6 element transformation vector
-  Eigen::Matrix<double, 6, 1> p, delta_p, score_gradient;
   Eigen::Vector3f init_translation = eig_transformation.translation();
   Eigen::Vector3f init_rotation = eig_transformation.rotation().eulerAngles(0, 1, 2);
+
+  Eigen::Matrix<double, 6, 1> p;
   p << init_translation(0), init_translation(1), init_translation(2),
-    init_rotation(0), init_rotation(1), init_rotation(2);
+       init_rotation(0), init_rotation(1), init_rotation(2);
 
   Eigen::Matrix<double, 6, 6> hessian;
 
@@ -124,6 +125,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransform
   double delta_p_norm;
 
   // Calculate derivatives of initial transform vector, subsequent derivative calculations are done in the step length determination.
+  Eigen::Matrix<double, 6, 1> score_gradient;
   score = computeDerivatives(score_gradient, hessian, output, p);
 
   while (!converged_) {
@@ -131,7 +133,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransform
     Eigen::JacobiSVD<Eigen::Matrix<double, 6, 6>> sv(hessian,
       Eigen::ComputeFullU | Eigen::ComputeFullV);
     // Negative for maximization as opposed to minimization
-    delta_p = sv.solve(-score_gradient);
+    Eigen::Matrix<double, 6, 1> delta_p = sv.solve(-score_gradient);
 
     //Calculate step length with guaranteed sufficient decrease [More, Thuente 1994]
     delta_p_norm = delta_p.norm();
