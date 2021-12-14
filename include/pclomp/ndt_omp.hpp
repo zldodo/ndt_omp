@@ -270,7 +270,6 @@ protected:
   using pcl::Registration<PointSource, PointTarget>::target_;
   using pcl::Registration<PointSource, PointTarget>::nr_iterations_;
   using pcl::Registration<PointSource, PointTarget>::max_iterations_;
-  using pcl::Registration<PointSource, PointTarget>::previous_transformation_;
   using pcl::Registration<PointSource, PointTarget>::final_transformation_;
   using pcl::Registration<PointSource, PointTarget>::transformation_;
   using pcl::Registration<PointSource, PointTarget>::transformation_epsilon_;

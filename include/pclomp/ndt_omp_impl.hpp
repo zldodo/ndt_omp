@@ -123,9 +123,6 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransform
   score = computeDerivatives(score_gradient, hessian, output, p);
 
   while (!converged_) {
-    // Store previous transformation
-    previous_transformation_ = transformation_;
-
     // Solve for decent direction using newton method, line 23 in Algorithm 2 [Magnusson 2009]
     Eigen::JacobiSVD<Eigen::Matrix<double, 6, 6>> sv(hessian,
       Eigen::ComputeFullU | Eigen::ComputeFullV);
