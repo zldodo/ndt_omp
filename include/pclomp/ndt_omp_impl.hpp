@@ -76,6 +76,17 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::NormalDistributi
   num_threads_ = omp_get_max_threads();
 }
 
+std::tuple<double, double, double> initDistributionParams(
+  const double outlier_ratio, const double resolution)
+{
+  // Initializes the gaussian fitting parameters (eq. 6.8) [Magnusson 2009]
+  const double c1 = 10 * (1 - outlier_ratio);
+  const double c2 = outlier_ratio / pow(resolution, 3);
+  const double d3 = -log(c2);
+  const double d1 = -log(c1 + c2) - d3;
+  const double d2 = -2 * log((-log(c1 * exp(-0.5) + c2) - d3) / d1);
+  return {d1, d2, d3};
+}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<typename PointSource, typename PointTarget>
@@ -86,14 +97,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransform
   nr_iterations_ = 0;
   converged_ = false;
 
-  double gauss_c1, gauss_c2;
-
-  // Initializes the gaussian fitting parameters (eq. 6.8) [Magnusson 2009]
-  gauss_c1 = 10 * (1 - outlier_ratio_);
-  gauss_c2 = outlier_ratio_ / pow(resolution_, 3);
-  gauss_d3_ = -log(gauss_c2);
-  gauss_d1_ = -log(gauss_c1 + gauss_c2) - gauss_d3_;
-  gauss_d2_ = -2 * log((-log(gauss_c1 * exp(-0.5) + gauss_c2) - gauss_d3_) / gauss_d1_);
+  std::tie(gauss_d1_, gauss_d2_, gauss_d3_) = initDistributionParams(outlier_ratio_, resolution_);
 
   if (guess != Eigen::Matrix4f::Identity()) {
     // Initialise final transformation to the guessed one
