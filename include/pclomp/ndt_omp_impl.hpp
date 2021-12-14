@@ -88,6 +88,8 @@ std::tuple<double, double, double> initDistributionParams(
   return {d1, d2, d3};
 }
 
+using Matrix6d = Eigen::Matrix<double, 6, 6>;
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<typename PointSource, typename PointTarget>
 void
@@ -119,7 +121,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransform
   p << init_translation(0), init_translation(1), init_translation(2),
        init_rotation(0), init_rotation(1), init_rotation(2);
 
-  Eigen::Matrix<double, 6, 6> hessian;
+  Matrix6d hessian;
 
   double score = 0;
   double delta_p_norm;
@@ -130,8 +132,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransform
 
   while (!converged_) {
     // Solve for decent direction using newton method, line 23 in Algorithm 2 [Magnusson 2009]
-    Eigen::JacobiSVD<Eigen::Matrix<double, 6, 6>> sv(hessian,
-      Eigen::ComputeFullU | Eigen::ComputeFullV);
+    const Eigen::JacobiSVD<Matrix6d> sv(hessian, Eigen::ComputeFullU | Eigen::ComputeFullV);
     // Negative for maximization as opposed to minimization
     Eigen::Matrix<double, 6, 1> delta_p = sv.solve(-score_gradient);
 
@@ -150,7 +151,6 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransform
       transformation_epsilon_ / 2, score, score_gradient, hessian,
       output);
     delta_p *= delta_p_norm;
-
 
     transformation_ =
       (Eigen::Translation<float, 3>(
@@ -196,7 +196,7 @@ template<typename PointSource, typename PointTarget>
 double
 pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivatives(
   Eigen::Matrix<double, 6, 1> & score_gradient,
-  Eigen::Matrix<double, 6, 6> & hessian,
+  Matrix6d & hessian,
   PointCloudSource & trans_cloud,
   Eigen::Matrix<double, 6, 1> & p,
   bool compute_hessian)
@@ -208,8 +208,8 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
   std::vector<double> scores(input_->points.size());
   std::vector<Eigen::Matrix<double, 6, 1>,
     Eigen::aligned_allocator<Eigen::Matrix<double, 6, 1>>> score_gradients(input_->points.size());
-  std::vector<Eigen::Matrix<double, 6, 6>,
-    Eigen::aligned_allocator<Eigen::Matrix<double, 6, 6>>> hessians(input_->points.size());
+  std::vector<Matrix6d,
+    Eigen::aligned_allocator<Matrix6d>> hessians(input_->points.size());
   for (std::size_t i = 0; i < input_->points.size(); i++) {
     scores[i] = 0;
     score_gradients[i].setZero();
@@ -267,7 +267,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
 
     double score_pt = 0;
     Eigen::Matrix<double, 6, 1> score_gradient_pt = Eigen::Matrix<double, 6, 1>::Zero();
-    Eigen::Matrix<double, 6, 6> hessian_pt = Eigen::Matrix<double, 6, 6>::Zero();
+    Matrix6d hessian_pt = Matrix6d::Zero();
 
     for (typename std::vector<TargetGridLeafConstPtr>::iterator neighborhood_it =
       neighborhood.begin();
@@ -520,7 +520,7 @@ template<typename PointSource, typename PointTarget>
 double
 pclomp::NormalDistributionsTransform<PointSource, PointTarget>::updateDerivatives(
   Eigen::Matrix<double, 6, 1> & score_gradient,
-  Eigen::Matrix<double, 6, 6> & hessian,
+  Matrix6d & hessian,
   const Eigen::Matrix<float, 4, 6> & point_gradient4,
   const Eigen::Matrix<float, 24, 6> & point_hessian_,
   const Eigen::Vector3d & x_trans, const Eigen::Matrix3d & c_inv,
@@ -586,7 +586,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::updateDerivative
 template<typename PointSource, typename PointTarget>
 void
 pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeHessian(
-  Eigen::Matrix<double, 6, 6> & hessian,
+  Matrix6d & hessian,
   PointCloudSource & trans_cloud, Eigen::Matrix<double, 6, 1> &)
 {
   // Original Point and Transformed Point
@@ -662,7 +662,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeHessian(
 template<typename PointSource, typename PointTarget>
 void
 pclomp::NormalDistributionsTransform<PointSource, PointTarget>::updateHessian(
-  Eigen::Matrix<double, 6, 6> & hessian,
+  Matrix6d & hessian,
   const Eigen::Matrix<double, 3, 6> & point_gradient_,
   const Eigen::Matrix<double, 18, 6> & point_hessian_,
   const Eigen::Vector3d & x_trans,
@@ -826,7 +826,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeStepLengt
   const Eigen::Matrix<double, 6, 1> & x, Eigen::Matrix<double, 6, 1> & step_dir, double step_init,
   double step_max,
   double step_min, double & score, Eigen::Matrix<double, 6, 1> & score_gradient,
-  Eigen::Matrix<double, 6, 6> & hessian,
+  Matrix6d & hessian,
   PointCloudSource & trans_cloud)
 {
   // Set the value of phi(0), Equation 1.3 [More, Thuente 1994]
