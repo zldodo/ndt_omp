@@ -90,6 +90,15 @@ std::tuple<double, double, double> initDistributionParams(
 
 using Matrix6d = Eigen::Matrix<double, 6, 6>;
 
+Eigen::Matrix4d makeTransformation(const Eigen::Matrix<double, 6, 1> & v)
+{
+  Eigen::Translation<double, 3> t = Eigen::Translation<double, 3>(v(0), v(1), v(2));
+  Eigen::AngleAxis<double> rx = Eigen::AngleAxis<double>(v(3), Eigen::Vector3d::UnitX());
+  Eigen::AngleAxis<double> ry = Eigen::AngleAxis<double>(v(4), Eigen::Vector3d::UnitY());
+  Eigen::AngleAxis<double> rz = Eigen::AngleAxis<double>(v(5), Eigen::Vector3d::UnitZ());
+  return (t * rx * ry * rz).matrix();
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<typename PointSource, typename PointTarget>
 void
@@ -152,13 +161,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransform
       output);
     delta_p *= delta_p_norm;
 
-    transformation_ =
-      (Eigen::Translation<float, 3>(
-        static_cast<float>(delta_p(0)), static_cast<float>(delta_p(1)),
-        static_cast<float>(delta_p(2))) *
-      Eigen::AngleAxis<float>(static_cast<float>(delta_p(3)), Eigen::Vector3f::UnitX()) *
-      Eigen::AngleAxis<float>(static_cast<float>(delta_p(4)), Eigen::Vector3f::UnitY()) *
-      Eigen::AngleAxis<float>(static_cast<float>(delta_p(5)), Eigen::Vector3f::UnitZ())).matrix();
+    transformation_ = makeTransformation(delta_p).cast<float>();
 
     transformation_array_.push_back(final_transformation_);
 
