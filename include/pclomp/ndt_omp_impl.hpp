@@ -92,10 +92,10 @@ using Matrix6d = Eigen::Matrix<double, 6, 6>;
 
 Eigen::Matrix4d makeTransformation(const Eigen::Matrix<double, 6, 1> & v)
 {
-  Eigen::Translation<double, 3> t = Eigen::Translation<double, 3>(v(0), v(1), v(2));
-  Eigen::AngleAxis<double> rx = Eigen::AngleAxis<double>(v(3), Eigen::Vector3d::UnitX());
-  Eigen::AngleAxis<double> ry = Eigen::AngleAxis<double>(v(4), Eigen::Vector3d::UnitY());
-  Eigen::AngleAxis<double> rz = Eigen::AngleAxis<double>(v(5), Eigen::Vector3d::UnitZ());
+  const Eigen::Translation<double, 3> t(v(0), v(1), v(2));
+  const Eigen::AngleAxis<double> rx(v(3), Eigen::Vector3d::UnitX());
+  const Eigen::AngleAxis<double> ry(v(4), Eigen::Vector3d::UnitY());
+  const Eigen::AngleAxis<double> rz(v(5), Eigen::Vector3d::UnitZ());
   return (t * rx * ry * rz).matrix();
 }
 
