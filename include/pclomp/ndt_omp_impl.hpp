@@ -921,13 +921,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeStepLengt
 
     x_t = x + step_dir * a_t;
 
-    final_transformation_ =
-      (Eigen::Translation<float, 3>(
-        static_cast<float>(x_t(0)), static_cast<float>(x_t(1)),
-        static_cast<float>(x_t(2))) *
-      Eigen::AngleAxis<float>(static_cast<float>(x_t(3)), Eigen::Vector3f::UnitX()) *
-      Eigen::AngleAxis<float>(static_cast<float>(x_t(4)), Eigen::Vector3f::UnitY()) *
-      Eigen::AngleAxis<float>(static_cast<float>(x_t(5)), Eigen::Vector3f::UnitZ())).matrix();
+    final_transformation_ = makeTransformation(x_t).cast<float>();
 
     // New transformed point cloud
     // Done on final cloud to prevent wasted computation
