@@ -123,12 +123,11 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransform
   transformation_array_.push_back(final_transformation_);
 
   // Convert initial guess matrix to 6 element transformation vector
-  Eigen::Vector3f init_translation = eig_transformation.translation();
-  Eigen::Vector3f init_rotation = eig_transformation.rotation().eulerAngles(0, 1, 2);
+  Eigen::Vector3d init_translation = eig_transformation.translation().cast<double>();
+  Eigen::Vector3d init_rotation = eig_transformation.rotation().eulerAngles(0, 1, 2).cast<double>();
 
   Eigen::Matrix<double, 6, 1> p;
-  p << init_translation(0), init_translation(1), init_translation(2),
-       init_rotation(0), init_rotation(1), init_rotation(2);
+  p << init_translation, init_rotation;
 
   Matrix6d hessian;
 
