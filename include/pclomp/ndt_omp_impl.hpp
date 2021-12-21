@@ -475,12 +475,56 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computePointDeri
   }
 }
 
+Eigen::Matrix<double, 18, 6> computePointHessian(
+    const Eigen::Vector3d & h_ang_a2_,
+    const Eigen::Vector3d & h_ang_a3_,
+    const Eigen::Vector3d & h_ang_b2_,
+    const Eigen::Vector3d & h_ang_b3_,
+    const Eigen::Vector3d & h_ang_c2_,
+    const Eigen::Vector3d & h_ang_c3_,
+    const Eigen::Vector3d & h_ang_d1_,
+    const Eigen::Vector3d & h_ang_d2_,
+    const Eigen::Vector3d & h_ang_d3_,
+    const Eigen::Vector3d & h_ang_e1_,
+    const Eigen::Vector3d & h_ang_e2_,
+    const Eigen::Vector3d & h_ang_e3_,
+    const Eigen::Vector3d & h_ang_f1_,
+    const Eigen::Vector3d & h_ang_f2_,
+    const Eigen::Vector3d & h_ang_f3_,
+    const Eigen::Vector3d & x)
+{
+  // Vectors from Equation 6.21 [Magnusson 2009]
+  Eigen::Vector3d a, b, c, d, e, f;
+
+  a << 0, x.dot(h_ang_a2_), x.dot(h_ang_a3_);
+  b << 0, x.dot(h_ang_b2_), x.dot(h_ang_b3_);
+  c << 0, x.dot(h_ang_c2_), x.dot(h_ang_c3_);
+  d << x.dot(h_ang_d1_), x.dot(h_ang_d2_), x.dot(h_ang_d3_);
+  e << x.dot(h_ang_e1_), x.dot(h_ang_e2_), x.dot(h_ang_e3_);
+  f << x.dot(h_ang_f1_), x.dot(h_ang_f2_), x.dot(h_ang_f3_);
+
+  // Calculate second derivative of Transformation Equation 6.17 w.r.t. transform vector p.
+  // Derivative w.r.t. ith and jth elements of transform vector corresponds to
+  // the 3x1 block matrix starting at (3i,j), Equation 6.20 and 6.21 [Magnusson 2009]
+  Eigen::Matrix<double, 18, 6> point_hessian_;
+  point_hessian_.block<3, 1>(9, 3) = a;
+  point_hessian_.block<3, 1>(12, 3) = b;
+  point_hessian_.block<3, 1>(15, 3) = c;
+  point_hessian_.block<3, 1>(9, 4) = b;
+  point_hessian_.block<3, 1>(12, 4) = d;
+  point_hessian_.block<3, 1>(15, 4) = e;
+  point_hessian_.block<3, 1>(9, 5) = c;
+  point_hessian_.block<3, 1>(12, 5) = e;
+  point_hessian_.block<3, 1>(15, 5) = f;
+  return point_hessian_;
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<typename PointSource, typename PointTarget>
 void
 pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computePointDerivatives(
-  Eigen::Vector3d & x, Eigen::Matrix<double, 3, 6> & point_gradient_, Eigen::Matrix<double, 18,
-  6> & point_hessian_, bool compute_hessian) const
+  Eigen::Vector3d & x, Eigen::Matrix<double, 3, 6> & point_gradient_,
+  Eigen::Matrix<double, 18, 6> & point_hessian_, bool compute_hessian) const
 {
   // Calculate first derivative of Transformation Equation 6.17 w.r.t. transform vector p.
   // Derivative w.r.t. ith element of transform vector corresponds to column i, Equation 6.18 and 6.19 [Magnusson 2009]
@@ -494,27 +538,23 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computePointDeri
   point_gradient_(2, 5) = x.dot(j_ang_h_);
 
   if (compute_hessian) {
-    // Vectors from Equation 6.21 [Magnusson 2009]
-    Eigen::Vector3d a, b, c, d, e, f;
-
-    a << 0, x.dot(h_ang_a2_), x.dot(h_ang_a3_);
-    b << 0, x.dot(h_ang_b2_), x.dot(h_ang_b3_);
-    c << 0, x.dot(h_ang_c2_), x.dot(h_ang_c3_);
-    d << x.dot(h_ang_d1_), x.dot(h_ang_d2_), x.dot(h_ang_d3_);
-    e << x.dot(h_ang_e1_), x.dot(h_ang_e2_), x.dot(h_ang_e3_);
-    f << x.dot(h_ang_f1_), x.dot(h_ang_f2_), x.dot(h_ang_f3_);
-
-    // Calculate second derivative of Transformation Equation 6.17 w.r.t. transform vector p.
-    // Derivative w.r.t. ith and jth elements of transform vector corresponds to the 3x1 block matrix starting at (3i,j), Equation 6.20 and 6.21 [Magnusson 2009]
-    point_hessian_.block<3, 1>(9, 3) = a;
-    point_hessian_.block<3, 1>(12, 3) = b;
-    point_hessian_.block<3, 1>(15, 3) = c;
-    point_hessian_.block<3, 1>(9, 4) = b;
-    point_hessian_.block<3, 1>(12, 4) = d;
-    point_hessian_.block<3, 1>(15, 4) = e;
-    point_hessian_.block<3, 1>(9, 5) = c;
-    point_hessian_.block<3, 1>(12, 5) = e;
-    point_hessian_.block<3, 1>(15, 5) = f;
+    point_hessian_ = computePointHessian(
+      h_ang_a2_,
+      h_ang_a3_,
+      h_ang_b2_,
+      h_ang_b3_,
+      h_ang_c2_,
+      h_ang_c3_,
+      h_ang_d1_,
+      h_ang_d2_,
+      h_ang_d3_,
+      h_ang_e1_,
+      h_ang_e2_,
+      h_ang_e3_,
+      h_ang_f1_,
+      h_ang_f2_,
+      h_ang_f3_,
+      x);
   }
 }
 
