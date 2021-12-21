@@ -475,6 +475,32 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computePointDeri
   }
 }
 
+Eigen::Matrix<double, 3, 6> computePointGradient(
+  const Eigen::Vector3d & j_ang_a_,
+  const Eigen::Vector3d & j_ang_b_,
+  const Eigen::Vector3d & j_ang_c_,
+  const Eigen::Vector3d & j_ang_d_,
+  const Eigen::Vector3d & j_ang_e_,
+  const Eigen::Vector3d & j_ang_f_,
+  const Eigen::Vector3d & j_ang_g_,
+  const Eigen::Vector3d & j_ang_h_,
+  const Eigen::Vector3d & x)
+{
+  Eigen::Matrix<double, 3, 6> point_gradient_;
+  // Calculate first derivative of Transformation Equation 6.17 w.r.t. transform vector p.
+  // Derivative w.r.t. ith element of transform vector corresponds to column i,
+  // Equation 6.18 and 6.19 [Magnusson 2009]
+  point_gradient_(1, 3) = x.dot(j_ang_a_);
+  point_gradient_(2, 3) = x.dot(j_ang_b_);
+  point_gradient_(0, 4) = x.dot(j_ang_c_);
+  point_gradient_(1, 4) = x.dot(j_ang_d_);
+  point_gradient_(2, 4) = x.dot(j_ang_e_);
+  point_gradient_(0, 5) = x.dot(j_ang_f_);
+  point_gradient_(1, 5) = x.dot(j_ang_g_);
+  point_gradient_(2, 5) = x.dot(j_ang_h_);
+  return point_gradient_;
+}
+
 Eigen::Matrix<double, 18, 6> computePointHessian(
     const Eigen::Vector3d & h_ang_a2_,
     const Eigen::Vector3d & h_ang_a3_,
@@ -526,16 +552,16 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computePointDeri
   Eigen::Vector3d & x, Eigen::Matrix<double, 3, 6> & point_gradient_,
   Eigen::Matrix<double, 18, 6> & point_hessian_, bool compute_hessian) const
 {
-  // Calculate first derivative of Transformation Equation 6.17 w.r.t. transform vector p.
-  // Derivative w.r.t. ith element of transform vector corresponds to column i, Equation 6.18 and 6.19 [Magnusson 2009]
-  point_gradient_(1, 3) = x.dot(j_ang_a_);
-  point_gradient_(2, 3) = x.dot(j_ang_b_);
-  point_gradient_(0, 4) = x.dot(j_ang_c_);
-  point_gradient_(1, 4) = x.dot(j_ang_d_);
-  point_gradient_(2, 4) = x.dot(j_ang_e_);
-  point_gradient_(0, 5) = x.dot(j_ang_f_);
-  point_gradient_(1, 5) = x.dot(j_ang_g_);
-  point_gradient_(2, 5) = x.dot(j_ang_h_);
+  point_gradient_ = computePointGradient(
+    j_ang_a_,
+    j_ang_b_,
+    j_ang_c_,
+    j_ang_d_,
+    j_ang_e_,
+    j_ang_f_,
+    j_ang_g_,
+    j_ang_h_,
+    x);
 
   if (compute_hessian) {
     point_hessian_ = computePointHessian(
