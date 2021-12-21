@@ -345,14 +345,14 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeAngleDeri
   }
 
   // Precomputed angular gradiant components. Letters correspond to Equation 6.19 [Magnusson 2009]
-  j_ang_a_ << (-sx * sz + cx * sy * cz), (-sx * cz - cx * sy * sz), (-cx * cy);
-  j_ang_b_ << (cx * sz + sx * sy * cz), (cx * cz - sx * sy * sz), (-sx * cy);
-  j_ang_c_ << (-sy * cz), sy * sz, cy;
-  j_ang_d_ << sx * cy * cz, (-sx * cy * sz), sx * sy;
-  j_ang_e_ << (-cx * cy * cz), cx * cy * sz, (-cx * sy);
-  j_ang_f_ << (-cy * sz), (-cy * cz), 0;
-  j_ang_g_ << (cx * cz - sx * sy * sz), (-cx * sz - sx * sy * cz), 0;
-  j_ang_h_ << (sx * cz + cx * sy * sz), (cx * sy * cz - sx * sz), 0;
+  j_ang_a_ << -sx * sz + cx * sy * cz, -sx * cz - cx * sy * sz, -cx * cy;
+  j_ang_b_ << cx * sz + sx * sy * cz, cx * cz - sx * sy * sz, -sx * cy;
+  j_ang_c_ << -sy * cz, sy * sz, cy;
+  j_ang_d_ << sx * cy * cz, -sx * cy * sz, sx * sy;
+  j_ang_e_ << -cx * cy * cz, cx * cy * sz, -cx * sy;
+  j_ang_f_ << -cy * sz, -cy * cz, 0;
+  j_ang_g_ << cx * cz - sx * sy * sz, -cx * sz - sx * sy * cz, 0;
+  j_ang_h_ << sx * cz + cx * sy * sz, cx * sy * cz - sx * sz, 0;
 
   j_ang.setZero();
   j_ang.row(0) << -sx * sz + cx * sy * cz, -sx * cz - cx * sy * sz, -cx * cy, 0.0f;
@@ -361,12 +361,8 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeAngleDeri
   j_ang.row(3) << sx * cy * cz, -sx * cy * sz, sx * sy, 0.0f;
   j_ang.row(4) << -cx * cy * cz, cx * cy * sz, -cx * sy, 0.0f;
   j_ang.row(5) << -cy * sz, -cy * cz, 0, 0.0f;
-  j_ang.row(6) <<
-    cx * cz - sx * sy * sz, -cx * sz - sx * sy * cz, 0,
-    0.0f;
-  j_ang.row(7) <<
-    sx * cz + cx * sy * sz, cx * sy * cz - sx * sz, 0,
-    0.0f;
+  j_ang.row(6) << cx * cz - sx * sy * sz, -cx * sz - sx * sy * cz, 0, 0.0f;
+  j_ang.row(7) << sx * cz + cx * sy * sz, cx * sy * cz - sx * sz, 0, 0.0f;
 
   if (compute_hessian) {
     // Precomputed angular hessian components.
@@ -393,36 +389,26 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeAngleDeri
     h_ang_f3_ << -sx * sz + cx * sy * cz, -cx * sy * sz - sx * cz, 0;
 
     h_ang.setZero();
-    h_ang.row(0) <<
-      -cx * sz - sx * sy * cz, -cx * cz + sx * sy * sz,
-      sx * cy, 0.0f;                                                                                                     // a2
-    h_ang.row(1) << -sx * sz + cx * sy * cz, -cx * sy * sz - sx * cz, -cx * cy, 0.0f;                           // a3
+    h_ang.row(0) << -cx * sz - sx * sy * cz, -cx * cz + sx * sy * sz, sx * cy, 0.0f;    // a2
+    h_ang.row(1) << -sx * sz + cx * sy * cz, -cx * sy * sz - sx * cz, -cx * cy, 0.0f;   // a3
 
-    h_ang.row(2) << cx * cy * cz, -cx * cy * sz, cx * sy, 0.0f;                            // b2
-    h_ang.row(3) << sx * cy * cz, -sx * cy * sz, sx * sy, 0.0f;                            // b3
+    h_ang.row(2) << cx * cy * cz, -cx * cy * sz, cx * sy, 0.0f;                   // b2
+    h_ang.row(3) << sx * cy * cz, -sx * cy * sz, sx * sy, 0.0f;                   // b3
 
-    h_ang.row(4) <<
-      -sx * cz - cx * sy * sz, sx * sz - cx * sy * cz, 0,
-      0.0f;                                                                                                               // c2
-    h_ang.row(5) <<
-      cx * cz - sx * sy * sz, -sx * sy * cz - cx * sz, 0,
-      0.0f;                                                                                                               // c3
+    h_ang.row(4) << -sx * cz - cx * sy * sz, sx * sz - cx * sy * cz, 0, 0.0f;     // c2
+    h_ang.row(5) << cx * cz - sx * sy * sz, -sx * sy * cz - cx * sz, 0, 0.0f;     // c3
 
-    h_ang.row(6) << -cy * cz, cy * sz, sy, 0.0f;                                        // d1
-    h_ang.row(7) << -sx * sy * cz, sx * sy * sz, sx * cy, 0.0f;                            // d2
-    h_ang.row(8) << cx * sy * cz, -cx * sy * sz, -cx * cy, 0.0f;                        // d3
+    h_ang.row(6) << -cy * cz, cy * sz, sy, 0.0f;                                  // d1
+    h_ang.row(7) << -sx * sy * cz, sx * sy * sz, sx * cy, 0.0f;                   // d2
+    h_ang.row(8) << cx * sy * cz, -cx * sy * sz, -cx * cy, 0.0f;                  // d3
 
-    h_ang.row(9) << sy * sz, sy * cz, 0, 0.0f;                                            // e1
-    h_ang.row(10) << -sx * cy * sz, -sx * cy * cz, 0, 0.0f;                                 // e2
-    h_ang.row(11) << cx * cy * sz, cx * cy * cz, 0, 0.0f;                                 // e3
+    h_ang.row(9) << sy * sz, sy * cz, 0, 0.0f;                                    // e1
+    h_ang.row(10) << -sx * cy * sz, -sx * cy * cz, 0, 0.0f;                       // e2
+    h_ang.row(11) << cx * cy * sz, cx * cy * cz, 0, 0.0f;                         // e3
 
-    h_ang.row(12) << -cy * cz, cy * sz, 0, 0.0f;                                             // f1
-    h_ang.row(13) <<
-      -cx * sz - sx * sy * cz, -cx * cz + sx * sy * sz,
-      0, 0.0f;                                                                                                           // f2
-    h_ang.row(14) <<
-      -sx * sz + cx * sy * cz, -cx * sy * sz - sx * cz,
-      0, 0.0f;                                                                                                           // f3
+    h_ang.row(12) << -cy * cz, cy * sz, 0, 0.0f;                                  // f1
+    h_ang.row(13) << -cx * sz - sx * sy * cz, -cx * cz + sx * sy * sz, 0, 0.0f;   // f2
+    h_ang.row(14) << -sx * sz + cx * sy * cz, -cx * sy * sz - sx * cz, 0, 0.0f;   // f3
   }
 }
 
