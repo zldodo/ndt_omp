@@ -355,23 +355,22 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeAngleDeri
   j_ang_h_ << (sx * cz + cx * sy * sz), (cx * sy * cz - sx * sz), 0;
 
   j_ang.setZero();
-  j_ang.row(0).noalias() =
-    Eigen::Vector4f((-sx * sz + cx * sy * cz), (-sx * cz - cx * sy * sz), (-cx * cy), 0.0f);
-  j_ang.row(1).noalias() =
-    Eigen::Vector4f((cx * sz + sx * sy * cz), (cx * cz - sx * sy * sz), (-sx * cy), 0.0f);
-  j_ang.row(2).noalias() = Eigen::Vector4f((-sy * cz), sy * sz, cy, 0.0f);
-  j_ang.row(3).noalias() = Eigen::Vector4f(sx * cy * cz, (-sx * cy * sz), sx * sy, 0.0f);
-  j_ang.row(4).noalias() = Eigen::Vector4f((-cx * cy * cz), cx * cy * sz, (-cx * sy), 0.0f);
-  j_ang.row(5).noalias() = Eigen::Vector4f((-cy * sz), (-cy * cz), 0, 0.0f);
-  j_ang.row(6).noalias() = Eigen::Vector4f(
+  j_ang.row(0) << ((-sx * sz + cx * sy * cz), (-sx * cz - cx * sy * sz), (-cx * cy), 0.0f);
+  j_ang.row(1) << ((cx * sz + sx * sy * cz), (cx * cz - sx * sy * sz), (-sx * cy), 0.0f);
+  j_ang.row(2) << ((-sy * cz), sy * sz, cy, 0.0f);
+  j_ang.row(3) << (sx * cy * cz, (-sx * cy * sz), sx * sy, 0.0f);
+  j_ang.row(4) << ((-cx * cy * cz), cx * cy * sz, (-cx * sy), 0.0f);
+  j_ang.row(5) << ((-cy * sz), (-cy * cz), 0, 0.0f);
+  j_ang.row(6) << (
     (cx * cz - sx * sy * sz), (-cx * sz - sx * sy * cz), 0,
     0.0f);
-  j_ang.row(7).noalias() = Eigen::Vector4f(
+  j_ang.row(7) << (
     (sx * cz + cx * sy * sz), (cx * sy * cz - sx * sz), 0,
     0.0f);
 
   if (compute_hessian) {
-    // Precomputed angular hessian components. Letters correspond to Equation 6.21 and numbers correspond to row index [Magnusson 2009]
+    // Precomputed angular hessian components.
+    // Letters correspond to Equation 6.21 and numbers correspond to row index [Magnusson 2009]
     h_ang_a2_ << (-cx * sz - sx * sy * cz), (-cx * cz + sx * sy * sz), sx * cy;
     h_ang_a3_ << (-sx * sz + cx * sy * cz), (-cx * sy * sz - sx * cz), (-cx * cy);
 
@@ -394,35 +393,34 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeAngleDeri
     h_ang_f3_ << (-sx * sz + cx * sy * cz), (-cx * sy * sz - sx * cz), 0;
 
     h_ang.setZero();
-    h_ang.row(0).noalias() = Eigen::Vector4f(
+    h_ang.row(0) << (
       (-cx * sz - sx * sy * cz), (-cx * cz + sx * sy * sz),
       sx * cy, 0.0f);                                                                                                     // a2
-    h_ang.row(1).noalias() =
-      Eigen::Vector4f((-sx * sz + cx * sy * cz), (-cx * sy * sz - sx * cz), (-cx * cy), 0.0f);                           // a3
+    h_ang.row(1) << ((-sx * sz + cx * sy * cz), (-cx * sy * sz - sx * cz), (-cx * cy), 0.0f);                           // a3
 
-    h_ang.row(2).noalias() = Eigen::Vector4f((cx * cy * cz), (-cx * cy * sz), (cx * sy), 0.0f);                            // b2
-    h_ang.row(3).noalias() = Eigen::Vector4f((sx * cy * cz), (-sx * cy * sz), (sx * sy), 0.0f);                            // b3
+    h_ang.row(2) << ((cx * cy * cz), (-cx * cy * sz), (cx * sy), 0.0f);                            // b2
+    h_ang.row(3) << ((sx * cy * cz), (-sx * cy * sz), (sx * sy), 0.0f);                            // b3
 
-    h_ang.row(4).noalias() = Eigen::Vector4f(
+    h_ang.row(4) << (
       (-sx * cz - cx * sy * sz), (sx * sz - cx * sy * cz), 0,
       0.0f);                                                                                                               // c2
-    h_ang.row(5).noalias() = Eigen::Vector4f(
+    h_ang.row(5) << (
       (cx * cz - sx * sy * sz), (-sx * sy * cz - cx * sz), 0,
       0.0f);                                                                                                               // c3
 
-    h_ang.row(6).noalias() = Eigen::Vector4f((-cy * cz), (cy * sz), (sy), 0.0f);                                        // d1
-    h_ang.row(7).noalias() = Eigen::Vector4f((-sx * sy * cz), (sx * sy * sz), (sx * cy), 0.0f);                            // d2
-    h_ang.row(8).noalias() = Eigen::Vector4f((cx * sy * cz), (-cx * sy * sz), (-cx * cy), 0.0f);                        // d3
+    h_ang.row(6) << ((-cy * cz), (cy * sz), (sy), 0.0f);                                        // d1
+    h_ang.row(7) << ((-sx * sy * cz), (sx * sy * sz), (sx * cy), 0.0f);                            // d2
+    h_ang.row(8) << ((cx * sy * cz), (-cx * sy * sz), (-cx * cy), 0.0f);                        // d3
 
-    h_ang.row(9).noalias() = Eigen::Vector4f((sy * sz), (sy * cz), 0, 0.0f);                                            // e1
-    h_ang.row(10).noalias() = Eigen::Vector4f((-sx * cy * sz), (-sx * cy * cz), 0, 0.0f);                                 // e2
-    h_ang.row(11).noalias() = Eigen::Vector4f((cx * cy * sz), (cx * cy * cz), 0, 0.0f);                                 // e3
+    h_ang.row(9) << ((sy * sz), (sy * cz), 0, 0.0f);                                            // e1
+    h_ang.row(10) << ((-sx * cy * sz), (-sx * cy * cz), 0, 0.0f);                                 // e2
+    h_ang.row(11) << ((cx * cy * sz), (cx * cy * cz), 0, 0.0f);                                 // e3
 
-    h_ang.row(12).noalias() = Eigen::Vector4f((-cy * cz), (cy * sz), 0, 0.0f);                                             // f1
-    h_ang.row(13).noalias() = Eigen::Vector4f(
+    h_ang.row(12) << ((-cy * cz), (cy * sz), 0, 0.0f);                                             // f1
+    h_ang.row(13) << (
       (-cx * sz - sx * sy * cz), (-cx * cz + sx * sy * sz),
       0, 0.0f);                                                                                                           // f2
-    h_ang.row(14).noalias() = Eigen::Vector4f(
+    h_ang.row(14) << (
       (-sx * sz + cx * sy * cz), (-cx * sy * sz - sx * cz),
       0, 0.0f);                                                                                                           // f3
   }
