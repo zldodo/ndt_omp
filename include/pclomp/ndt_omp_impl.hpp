@@ -309,6 +309,20 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
   return score;
 }
 
+double round_cos(const double angle) {
+  if (fabs(angle) < 10e-5) {
+    return 1.0;
+  }
+  return cos(angle);
+}
+
+double round_sin(const double angle) {
+  if (fabs(angle) < 10e-5) {
+    return 0.0;
+  }
+  return sin(angle);
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<typename PointSource, typename PointTarget>
 void
@@ -316,32 +330,12 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeAngleDeri
   Eigen::Matrix<double, 6, 1> & p, bool compute_hessian)
 {
   // Simplified math for near 0 angles
-  double cx, cy, cz, sx, sy, sz;
-  if (fabs(p(3)) < 10e-5) {
-    //p(3) = 0;
-    cx = 1.0;
-    sx = 0.0;
-  } else {
-    cx = cos(p(3));
-    sx = sin(p(3));
-  }
-  if (fabs(p(4)) < 10e-5) {
-    //p(4) = 0;
-    cy = 1.0;
-    sy = 0.0;
-  } else {
-    cy = cos(p(4));
-    sy = sin(p(4));
-  }
-
-  if (fabs(p(5)) < 10e-5) {
-    //p(5) = 0;
-    cz = 1.0;
-    sz = 0.0;
-  } else {
-    cz = cos(p(5));
-    sz = sin(p(5));
-  }
+  const double cx = round_cos(p(3));
+  const double sx = round_sin(p(3));
+  const double cy = round_cos(p(4));
+  const double sy = round_sin(p(4));
+  const double cz = round_cos(p(5));
+  const double sz = round_sin(p(5));
 
   // Precomputed angular gradiant components. Letters correspond to Equation 6.19 [Magnusson 2009]
   j_ang_a_ << -sx * sz + cx * sy * cz, -sx * cz - cx * sy * sz, -cx * cy;
