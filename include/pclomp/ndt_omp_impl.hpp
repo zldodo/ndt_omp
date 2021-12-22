@@ -286,9 +286,11 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
       // Uses precomputed covariance for speed.
       c_inv = cell->getInverseCov();
 
-      // Compute derivative of transform function w.r.t. transform vector, J_E and H_E in Equations 6.18 and 6.20 [Magnusson 2009]
+      // Compute derivative of transform function w.r.t. transform vector,
+      // J_E and H_E in Equations 6.18 and 6.20 [Magnusson 2009]
       computePointDerivatives(x, point_gradient_, point_hessian_);
-      // Update score, gradient and hessian, lines 19-21 in Algorithm 2, according to Equations 6.10, 6.12 and 6.13, respectively [Magnusson 2009]
+      // Update score, gradient and hessian, lines 19-21 in Algorithm 2,
+      // according to Equations 6.10, 6.12 and 6.13, respectively [Magnusson 2009]
       score_pt += updateDerivatives(
         score_gradient_pt, hessian_pt, point_gradient_, point_hessian_,
         x_trans, c_inv, compute_hessian);
@@ -524,45 +526,6 @@ Eigen::Matrix<double, 18, 6> computePointHessian(
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<typename PointSource, typename PointTarget>
-void
-pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computePointDerivatives(
-  Eigen::Vector3d & x, Eigen::Matrix<double, 3, 6> & point_gradient_,
-  Eigen::Matrix<double, 18, 6> & point_hessian_, bool compute_hessian) const
-{
-  point_gradient_ = computePointGradient(
-    j_ang_a_,
-    j_ang_b_,
-    j_ang_c_,
-    j_ang_d_,
-    j_ang_e_,
-    j_ang_f_,
-    j_ang_g_,
-    j_ang_h_,
-    x);
-
-  if (compute_hessian) {
-    point_hessian_ = computePointHessian(
-      h_ang_a2_,
-      h_ang_a3_,
-      h_ang_b2_,
-      h_ang_b3_,
-      h_ang_c2_,
-      h_ang_c3_,
-      h_ang_d1_,
-      h_ang_d2_,
-      h_ang_d3_,
-      h_ang_e1_,
-      h_ang_e2_,
-      h_ang_e3_,
-      h_ang_f1_,
-      h_ang_f2_,
-      h_ang_f3_,
-      x);
-  }
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<typename PointSource, typename PointTarget>
 double
 pclomp::NormalDistributionsTransform<PointSource, PointTarget>::updateDerivatives(
   Eigen::Matrix<double, 6, 1> & score_gradient,
@@ -696,7 +659,18 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeHessian(
         c_inv = cell->getInverseCov();
 
         // Compute derivative of transform function w.r.t. transform vector, J_E and H_E in Equations 6.18 and 6.20 [Magnusson 2009]
-        computePointDerivatives(x, point_gradient_, point_hessian_);
+        point_gradient_ = computePointGradient(
+            j_ang_a_, j_ang_b_, j_ang_c_, j_ang_d_,
+            j_ang_e_, j_ang_f_, j_ang_g_, j_ang_h_,
+            x);
+
+        point_hessian_ = computePointHessian(
+          h_ang_a2_, h_ang_a3_,
+          h_ang_b2_, h_ang_b3_,
+          h_ang_c2_, h_ang_c3_,
+          h_ang_d1_, h_ang_d2_, h_ang_d3_,
+          h_ang_e1_, h_ang_e2_, h_ang_e3_,
+          h_ang_f1_, h_ang_f2_, h_ang_f3_, x);
         // Update hessian, lines 21 in Algorithm 2, according to Equations 6.10, 6.12 and 6.13, respectively [Magnusson 2009]
         updateHessian(hessian, point_gradient_, point_hessian_, x_trans, c_inv);
       }

@@ -346,17 +346,6 @@ protected:
   void
   computeAngleDerivatives(Eigen::Matrix<double, 6, 1> & p, bool compute_hessian = true);
 
-  /** \brief Compute point derivatives.
-   * \note Equation 6.18-21 [Magnusson 2009].
-   * \param[in] x point from the input cloud
-   * \param[in] compute_hessian flag to calculate hessian, unnecessary for step calculation.
-   */
-  void
-  computePointDerivatives(
-    Eigen::Vector3d & x, Eigen::Matrix<double, 3, 6> & point_gradient_,
-    Eigen::Matrix<double, 18, 6> & point_hessian_,
-    bool compute_hessian = true) const;
-
   void
   computePointDerivatives(
     Eigen::Vector3d & x, Eigen::Matrix<float, 4, 6> & point_gradient_,
