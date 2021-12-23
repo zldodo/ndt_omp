@@ -564,14 +564,12 @@ Eigen::Matrix<double, 18, 6> computePointHessian(
     const Eigen::Vector3d & x)
 {
   // Vectors from Equation 6.21 [Magnusson 2009]
-  Eigen::Vector3d a, b, c, d, e, f;
-
-  a << 0, x.dot(h_ang_a2_), x.dot(h_ang_a3_);
-  b << 0, x.dot(h_ang_b2_), x.dot(h_ang_b3_);
-  c << 0, x.dot(h_ang_c2_), x.dot(h_ang_c3_);
-  d << x.dot(h_ang_d1_), x.dot(h_ang_d2_), x.dot(h_ang_d3_);
-  e << x.dot(h_ang_e1_), x.dot(h_ang_e2_), x.dot(h_ang_e3_);
-  f << x.dot(h_ang_f1_), x.dot(h_ang_f2_), x.dot(h_ang_f3_);
+  const Eigen::Vector3d a(0, x.dot(h_ang_a2_), x.dot(h_ang_a3_));
+  const Eigen::Vector3d b(0, x.dot(h_ang_b2_), x.dot(h_ang_b3_));
+  const Eigen::Vector3d c(0, x.dot(h_ang_c2_), x.dot(h_ang_c3_));
+  const Eigen::Vector3d d(x.dot(h_ang_d1_), x.dot(h_ang_d2_), x.dot(h_ang_d3_));
+  const Eigen::Vector3d e(x.dot(h_ang_e1_), x.dot(h_ang_e2_), x.dot(h_ang_e3_));
+  const Eigen::Vector3d f(x.dot(h_ang_f1_), x.dot(h_ang_f2_), x.dot(h_ang_f3_));
 
   // Calculate second derivative of Transformation Equation 6.17 w.r.t. transform vector p.
   // Derivative w.r.t. ith and jth elements of transform vector corresponds to
