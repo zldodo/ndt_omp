@@ -42,6 +42,13 @@
 #ifndef PCL_REGISTRATION_NDT_OMP_IMPL_H_
 #define PCL_REGISTRATION_NDT_OMP_IMPL_H_
 
+
+template <typename PointSource>
+Eigen::Vector3d point_to_vector3d(const PointSource & p)
+{
+  return Eigen::Vector3d(p.x, p.y, p.z);
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<typename PointSource, typename PointTarget>
 pclomp::NormalDistributionsTransform<PointSource, PointTarget>::NormalDistributionsTransform()
@@ -372,10 +379,9 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
 
     for (const TargetGridLeafConstPtr cell : neighborhood)
     {
-      PointSource x_pt = input_->points[idx];
-      Eigen::Vector3d x(x_pt.x, x_pt.y, x_pt.z);
+      const Eigen::Vector3d x = point_to_vector3d(input_->points[idx]);
 
-      Eigen::Vector3d x_trans(x_trans_pt.x, x_trans_pt.y, x_trans_pt.z);
+      Eigen::Vector3d x_trans = point_to_vector3d(x_trans_pt);
 
       // Denorm point, x_k' in Equations 6.12 and 6.13 [Magnusson 2009]
       x_trans -= cell->getMean();
@@ -609,9 +615,9 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeHessian(
     for (const TargetGridLeafConstPtr cell : neighborhood) {
 
       PointSource x_pt = input_->points[idx];
-      const Eigen::Vector3d x(x_pt.x, x_pt.y, x_pt.z);
+      const Eigen::Vector3d x = point_to_vector3d(x_pt);
 
-      Eigen::Vector3d x_trans(x_trans_pt.x, x_trans_pt.y, x_trans_pt.z);
+      Eigen::Vector3d x_trans = point_to_vector3d(x_trans_pt);
 
       // Denorm point, x_k' in Equations 6.12 and 6.13 [Magnusson 2009]
       x_trans -= cell->getMean();
@@ -993,7 +999,7 @@ double pclomp::NormalDistributionsTransform<PointSource, PointTarget>::calculate
 
     for (const TargetGridLeafConstPtr cell : neighborhood)
     {
-      Eigen::Vector3d x_trans(x_trans_pt.x, x_trans_pt.y, x_trans_pt.z);
+      Eigen::Vector3d x_trans = point_to_vector3d(x_trans_pt);
 
       // Denorm point, x_k' in Equations 6.12 and 6.13 [Magnusson 2009]
       x_trans -= cell->getMean();
