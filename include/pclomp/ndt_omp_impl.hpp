@@ -336,9 +336,6 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
   // Precompute Angular Derivatives (eq. 6.19 and 6.21)[Magnusson 2009]
   computeAngleDerivatives(p);
 
-  std::vector<std::vector<TargetGridLeafConstPtr>> neighborhoods(num_threads_);
-  std::vector<std::vector<float>> distancess(num_threads_);
-
   // Update gradient and hessian for each point, line 17 in Algorithm 2 [Magnusson 2009]
 #pragma omp parallel for num_threads(num_threads_) schedule(guided, 8)
   for (std::size_t idx = 0; idx < input_->points.size(); idx++) {
@@ -353,8 +350,8 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
 
     PointSource x_trans_pt = trans_cloud.points[idx];
 
-    auto & neighborhood = neighborhoods[thread_n];
-    auto & distances = distancess[thread_n];
+    std::vector<TargetGridLeafConstPtr> neighborhood;
+    std::vector<float> distances;
 
     // Find neighbors (Radius search has been experimentally faster than direct neighbor checking.
     switch (search_method) {
