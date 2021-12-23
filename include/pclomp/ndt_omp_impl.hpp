@@ -244,7 +244,6 @@ void computePointHessian(
   point_hessian_.block<4, 1>(12, 5) = c;
   point_hessian_.block<4, 1>(16, 5) = e;
   point_hessian_.block<4, 1>(20, 5) = f;
-
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -279,33 +278,22 @@ double updateDerivatives(
   e_x_cov_x *= gauss_d1_;
 
   Eigen::Matrix<float, 4, 6> c_inv4_x_point_gradient4 = c_inv4 * point_gradient4;
-  Eigen::Matrix<float, 6,
-    1> x_trans4_dot_c_inv4_x_point_gradient4 = x_trans4 * c_inv4_x_point_gradient4;
+  Eigen::Matrix<float, 6, 1> g = x_trans4 * c_inv4_x_point_gradient4;
 
-  score_gradient.noalias() += (e_x_cov_x * x_trans4_dot_c_inv4_x_point_gradient4).cast<double>();
+  score_gradient.noalias() += (e_x_cov_x * g).cast<double>();
 
   if (compute_hessian) {
-    Eigen::Matrix<float, 1, 4> x_trans4_x_c_inv4 = x_trans4 * c_inv4;
-    Eigen::Matrix<float, 6,
-      6> point_gradient4_colj_dot_c_inv4_x_point_gradient4_col_i = point_gradient4.transpose() *
-      c_inv4_x_point_gradient4;
-    Eigen::Matrix<float, 6, 1> x_trans4_dot_c_inv4_x_ext_point_hessian_4ij;
+    Eigen::Matrix<float, 1, 4> xc = x_trans4 * c_inv4;
+    Eigen::Matrix<float, 6, 6> m = point_gradient4.transpose() * c_inv4_x_point_gradient4;
 
     for (int i = 0; i < 6; i++) {
       // Sigma_k^-1 d(T(x,p))/dpi, Reusable portion of Equation 6.12 and 6.13 [Magnusson 2009]
       // Update gradient, Equation 6.12 [Magnusson 2009]
-      x_trans4_dot_c_inv4_x_ext_point_hessian_4ij.noalias() = x_trans4_x_c_inv4 *
-        point_hessian_.block<4, 6>(i * 4, 0);
+      Eigen::Matrix<float, 6, 1> h = xc * point_hessian_.block<4, 6>(i * 4, 0);
 
       for (int j = 0; j < hessian.cols(); j++) {
         // Update hessian, Equation 6.13 [Magnusson 2009]
-        hessian(
-          i,
-          j) += e_x_cov_x *
-          (-gauss_d2 * x_trans4_dot_c_inv4_x_point_gradient4(i) *
-          x_trans4_dot_c_inv4_x_point_gradient4(j) +
-          x_trans4_dot_c_inv4_x_ext_point_hessian_4ij(j) +
-          point_gradient4_colj_dot_c_inv4_x_point_gradient4_col_i(j, i));
+        hessian(i, j) += e_x_cov_x * (-gauss_d2 * g(i) * g(j) + h(j) + m(j, i));
       }
     }
   }
