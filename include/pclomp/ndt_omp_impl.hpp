@@ -194,6 +194,52 @@ int omp_get_thread_num() {return 0;}
 #endif
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void computePointDerivatives(
+  Eigen::Vector3d & x,
+  Eigen::Matrix<float, 8, 4> & j_ang,
+  Eigen::Matrix<float, 16, 4> & h_ang,
+  Eigen::Matrix<float, 4, 6> & point_gradient_,
+  Eigen::Matrix<float, 24, 6> & point_hessian_)
+{
+  Eigen::Vector4f x4(x(0), x(1), x(2), 0.0f);
+
+  // Calculate first derivative of Transformation Equation 6.17 w.r.t. transform vector p.
+  // Derivative w.r.t. ith element of transform vector corresponds to column i, Equation 6.18 and 6.19 [Magnusson 2009]
+  Eigen::Matrix<float, 8, 1> x_j_ang = j_ang * x4;
+
+  point_gradient_(1, 3) = x_j_ang(0);
+  point_gradient_(2, 3) = x_j_ang(1);
+  point_gradient_(0, 4) = x_j_ang(2);
+  point_gradient_(1, 4) = x_j_ang(3);
+  point_gradient_(2, 4) = x_j_ang(4);
+  point_gradient_(0, 5) = x_j_ang(5);
+  point_gradient_(1, 5) = x_j_ang(6);
+  point_gradient_(2, 5) = x_j_ang(7);
+
+  Eigen::Matrix<float, 16, 1> x_h_ang = h_ang * x4;
+
+  // Vectors from Equation 6.21 [Magnusson 2009]
+  Eigen::Vector4f a(0, x_h_ang(0), x_h_ang(1), 0.0f);
+  Eigen::Vector4f b(0, x_h_ang(2), x_h_ang(3), 0.0f);
+  Eigen::Vector4f c(0, x_h_ang(4), x_h_ang(5), 0.0f);
+  Eigen::Vector4f d(x_h_ang(6), x_h_ang(7), x_h_ang(8), 0.0f);
+  Eigen::Vector4f e(x_h_ang(9), x_h_ang(10), x_h_ang(11), 0.0f);
+  Eigen::Vector4f f(x_h_ang(12), x_h_ang(13), x_h_ang(14), 0.0f);
+
+  // Calculate second derivative of Transformation Equation 6.17 w.r.t. transform vector p.
+  // Derivative w.r.t. ith and jth elements of transform vector corresponds to the 3x1 block matrix starting at (3i,j), Equation 6.20 and 6.21 [Magnusson 2009]
+  point_hessian_.block<4, 1>((9 / 3) * 4, 3) = a;
+  point_hessian_.block<4, 1>((12 / 3) * 4, 3) = b;
+  point_hessian_.block<4, 1>((15 / 3) * 4, 3) = c;
+  point_hessian_.block<4, 1>((9 / 3) * 4, 4) = b;
+  point_hessian_.block<4, 1>((12 / 3) * 4, 4) = d;
+  point_hessian_.block<4, 1>((15 / 3) * 4, 4) = e;
+  point_hessian_.block<4, 1>((9 / 3) * 4, 5) = c;
+  point_hessian_.block<4, 1>((12 / 3) * 4, 5) = e;
+  point_hessian_.block<4, 1>((15 / 3) * 4, 5) = f;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<typename PointSource, typename PointTarget>
 double
 pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivatives(
@@ -288,7 +334,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
 
       // Compute derivative of transform function w.r.t. transform vector,
       // J_E and H_E in Equations 6.18 and 6.20 [Magnusson 2009]
-      computePointDerivatives(x, point_gradient_, point_hessian_);
+      computePointDerivatives(x, j_ang, h_ang, point_gradient_, point_hessian_);
       // Update score, gradient and hessian, lines 19-21 in Algorithm 2,
       // according to Equations 6.10, 6.12 and 6.13, respectively [Magnusson 2009]
       score_pt += updateDerivatives(
@@ -404,53 +450,6 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeAngleDeri
     h_ang.row(12) << -cy * cz, cy * sz, 0, 0.0f;                                  // f1
     h_ang.row(13) << -cx * sz - sx * sy * cz, -cx * cz + sx * sy * sz, 0, 0.0f;   // f2
     h_ang.row(14) << -sx * sz + cx * sy * cz, -cx * sy * sz - sx * cz, 0, 0.0f;   // f3
-  }
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<typename PointSource, typename PointTarget>
-void
-pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computePointDerivatives(
-  Eigen::Vector3d & x, Eigen::Matrix<float, 4, 6> & point_gradient_, Eigen::Matrix<float, 24,
-  6> & point_hessian_, bool compute_hessian) const
-{
-  Eigen::Vector4f x4(x(0), x(1), x(2), 0.0f);
-
-  // Calculate first derivative of Transformation Equation 6.17 w.r.t. transform vector p.
-  // Derivative w.r.t. ith element of transform vector corresponds to column i, Equation 6.18 and 6.19 [Magnusson 2009]
-  Eigen::Matrix<float, 8, 1> x_j_ang = j_ang * x4;
-
-  point_gradient_(1, 3) = x_j_ang(0);
-  point_gradient_(2, 3) = x_j_ang(1);
-  point_gradient_(0, 4) = x_j_ang(2);
-  point_gradient_(1, 4) = x_j_ang(3);
-  point_gradient_(2, 4) = x_j_ang(4);
-  point_gradient_(0, 5) = x_j_ang(5);
-  point_gradient_(1, 5) = x_j_ang(6);
-  point_gradient_(2, 5) = x_j_ang(7);
-
-  if (compute_hessian) {
-    Eigen::Matrix<float, 16, 1> x_h_ang = h_ang * x4;
-
-    // Vectors from Equation 6.21 [Magnusson 2009]
-    Eigen::Vector4f a(0, x_h_ang(0), x_h_ang(1), 0.0f);
-    Eigen::Vector4f b(0, x_h_ang(2), x_h_ang(3), 0.0f);
-    Eigen::Vector4f c(0, x_h_ang(4), x_h_ang(5), 0.0f);
-    Eigen::Vector4f d(x_h_ang(6), x_h_ang(7), x_h_ang(8), 0.0f);
-    Eigen::Vector4f e(x_h_ang(9), x_h_ang(10), x_h_ang(11), 0.0f);
-    Eigen::Vector4f f(x_h_ang(12), x_h_ang(13), x_h_ang(14), 0.0f);
-
-    // Calculate second derivative of Transformation Equation 6.17 w.r.t. transform vector p.
-    // Derivative w.r.t. ith and jth elements of transform vector corresponds to the 3x1 block matrix starting at (3i,j), Equation 6.20 and 6.21 [Magnusson 2009]
-    point_hessian_.block<4, 1>((9 / 3) * 4, 3) = a;
-    point_hessian_.block<4, 1>((12 / 3) * 4, 3) = b;
-    point_hessian_.block<4, 1>((15 / 3) * 4, 3) = c;
-    point_hessian_.block<4, 1>((9 / 3) * 4, 4) = b;
-    point_hessian_.block<4, 1>((12 / 3) * 4, 4) = d;
-    point_hessian_.block<4, 1>((15 / 3) * 4, 4) = e;
-    point_hessian_.block<4, 1>((9 / 3) * 4, 5) = c;
-    point_hessian_.block<4, 1>((12 / 3) * 4, 5) = e;
-    point_hessian_.block<4, 1>((15 / 3) * 4, 5) = f;
   }
 }
 

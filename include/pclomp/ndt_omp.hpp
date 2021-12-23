@@ -346,12 +346,6 @@ protected:
   void
   computeAngleDerivatives(Eigen::Matrix<double, 6, 1> & p, bool compute_hessian = true);
 
-  void
-  computePointDerivatives(
-    Eigen::Vector3d & x, Eigen::Matrix<float, 4, 6> & point_gradient_,
-    Eigen::Matrix<float, 24, 6> & point_hessian_,
-    bool compute_hessian = true) const;
-
   /** \brief Compute hessian of probability function w.r.t. the transformation vector.
    * \note Equation 6.13 [Magnusson 2009].
    * \param[out] hessian the hessian matrix of the probability function w.r.t. the transformation vector
