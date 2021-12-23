@@ -327,7 +327,7 @@ protected:
    * \param[in] compute_hessian flag to calculate hessian, unnecessary for step calculation.
    */
   void
-  computeAngleDerivatives(Eigen::Matrix<double, 6, 1> & p, bool compute_hessian = true);
+  computeAngleDerivatives(Eigen::Matrix<double, 6, 1> & p);
 
   /** \brief Compute hessian of probability function w.r.t. the transformation vector.
    * \note Equation 6.13 [Magnusson 2009].
