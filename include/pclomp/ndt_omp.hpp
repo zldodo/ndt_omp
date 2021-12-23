@@ -321,23 +321,6 @@ protected:
     Eigen::Matrix<double, 6, 1> & p,
     bool compute_hessian = true);
 
-  /** \brief Compute individual point contributions to derivatives of probability function w.r.t. the transformation vector.
-   * \note Equation 6.10, 6.12 and 6.13 [Magnusson 2009].
-   * \param[in,out] score_gradient the gradient vector of the probability function w.r.t. the transformation vector
-   * \param[in,out] hessian the hessian matrix of the probability function w.r.t. the transformation vector
-   * \param[in] x_trans transformed point minus mean of occupied covariance voxel
-   * \param[in] c_inv covariance of occupied covariance voxel
-   * \param[in] compute_hessian flag to calculate hessian, unnecessary for step calculation.
-   */
-  double
-  updateDerivatives(
-    Eigen::Matrix<double, 6, 1> & score_gradient,
-    Eigen::Matrix<double, 6, 6> & hessian,
-    const Eigen::Matrix<float, 4, 6> & point_gradient_,
-    const Eigen::Matrix<float, 24, 6> & point_hessian_,
-    const Eigen::Vector3d & x_trans, const Eigen::Matrix3d & c_inv,
-    bool compute_hessian = true) const;
-
   /** \brief Precompute angular components of derivatives.
    * \note Equation 6.19 and 6.21 [Magnusson 2009].
    * \param[in] p the current transform vector

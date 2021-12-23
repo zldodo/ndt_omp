@@ -240,6 +240,72 @@ void computePointDerivatives(
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+double updateDerivatives(
+  Eigen::Matrix<double, 6, 1> & score_gradient,
+  Matrix6d & hessian,
+  const Eigen::Matrix<float, 4, 6> & point_gradient4,
+  const Eigen::Matrix<float, 24, 6> & point_hessian_,
+  const Eigen::Vector3d & x_trans, const Eigen::Matrix3d & c_inv,
+  const double gauss_d1_, const double gauss_d2_,
+  bool compute_hessian = true)
+{
+  Eigen::Matrix<float, 1, 4> x_trans4(x_trans[0], x_trans[1], x_trans[2], 0.0f);
+  Eigen::Matrix4f c_inv4 = Eigen::Matrix4f::Zero();
+  c_inv4.topLeftCorner(3, 3) = c_inv.cast<float>();
+
+  float gauss_d2 = gauss_d2_;
+
+  // e^(-d_2/2 * (x_k - mu_k)^T Sigma_k^-1 (x_k - mu_k)) Equation 6.9 [Magnusson 2009]
+  float e_x_cov_x = exp(-gauss_d2 * x_trans4.dot(x_trans4 * c_inv4) * 0.5f);
+  // Calculate probability of transformed points existence, Equation 6.9 [Magnusson 2009]
+  float score_inc = -gauss_d1_ * e_x_cov_x;
+
+  e_x_cov_x = gauss_d2 * e_x_cov_x;
+
+  // Error checking for invalid values.
+  if (e_x_cov_x > 1 || e_x_cov_x < 0 || e_x_cov_x != e_x_cov_x) {
+    return 0;
+  }
+
+  // Reusable portion of Equation 6.12 and 6.13 [Magnusson 2009]
+  e_x_cov_x *= gauss_d1_;
+
+  Eigen::Matrix<float, 4, 6> c_inv4_x_point_gradient4 = c_inv4 * point_gradient4;
+  Eigen::Matrix<float, 6,
+    1> x_trans4_dot_c_inv4_x_point_gradient4 = x_trans4 * c_inv4_x_point_gradient4;
+
+  score_gradient.noalias() += (e_x_cov_x * x_trans4_dot_c_inv4_x_point_gradient4).cast<double>();
+
+  if (compute_hessian) {
+    Eigen::Matrix<float, 1, 4> x_trans4_x_c_inv4 = x_trans4 * c_inv4;
+    Eigen::Matrix<float, 6,
+      6> point_gradient4_colj_dot_c_inv4_x_point_gradient4_col_i = point_gradient4.transpose() *
+      c_inv4_x_point_gradient4;
+    Eigen::Matrix<float, 6, 1> x_trans4_dot_c_inv4_x_ext_point_hessian_4ij;
+
+    for (int i = 0; i < 6; i++) {
+      // Sigma_k^-1 d(T(x,p))/dpi, Reusable portion of Equation 6.12 and 6.13 [Magnusson 2009]
+      // Update gradient, Equation 6.12 [Magnusson 2009]
+      x_trans4_dot_c_inv4_x_ext_point_hessian_4ij.noalias() = x_trans4_x_c_inv4 *
+        point_hessian_.block<4, 6>(i * 4, 0);
+
+      for (int j = 0; j < hessian.cols(); j++) {
+        // Update hessian, Equation 6.13 [Magnusson 2009]
+        hessian(
+          i,
+          j) += e_x_cov_x *
+          (-gauss_d2 * x_trans4_dot_c_inv4_x_point_gradient4(i) *
+          x_trans4_dot_c_inv4_x_point_gradient4(j) +
+          x_trans4_dot_c_inv4_x_ext_point_hessian_4ij(j) +
+          point_gradient4_colj_dot_c_inv4_x_point_gradient4_col_i(j, i));
+      }
+    }
+  }
+
+  return score_inc;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<typename PointSource, typename PointTarget>
 double
 pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivatives(
@@ -339,7 +405,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
       // according to Equations 6.10, 6.12 and 6.13, respectively [Magnusson 2009]
       score_pt += updateDerivatives(
         score_gradient_pt, hessian_pt, point_gradient_, point_hessian_,
-        x_trans, c_inv, compute_hessian);
+        x_trans, c_inv, gauss_d1_, gauss_d2_, compute_hessian);
     }
 
     scores[idx] = score_pt;
@@ -521,73 +587,6 @@ Eigen::Matrix<double, 18, 6> computePointHessian(
   point_hessian_.block<3, 1>(12, 5) = e;
   point_hessian_.block<3, 1>(15, 5) = f;
   return point_hessian_;
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<typename PointSource, typename PointTarget>
-double
-pclomp::NormalDistributionsTransform<PointSource, PointTarget>::updateDerivatives(
-  Eigen::Matrix<double, 6, 1> & score_gradient,
-  Matrix6d & hessian,
-  const Eigen::Matrix<float, 4, 6> & point_gradient4,
-  const Eigen::Matrix<float, 24, 6> & point_hessian_,
-  const Eigen::Vector3d & x_trans, const Eigen::Matrix3d & c_inv,
-  bool compute_hessian) const
-{
-  Eigen::Matrix<float, 1, 4> x_trans4(x_trans[0], x_trans[1], x_trans[2], 0.0f);
-  Eigen::Matrix4f c_inv4 = Eigen::Matrix4f::Zero();
-  c_inv4.topLeftCorner(3, 3) = c_inv.cast<float>();
-
-  float gauss_d2 = gauss_d2_;
-
-  // e^(-d_2/2 * (x_k - mu_k)^T Sigma_k^-1 (x_k - mu_k)) Equation 6.9 [Magnusson 2009]
-  float e_x_cov_x = exp(-gauss_d2 * x_trans4.dot(x_trans4 * c_inv4) * 0.5f);
-  // Calculate probability of transformed points existence, Equation 6.9 [Magnusson 2009]
-  float score_inc = -gauss_d1_ * e_x_cov_x;
-
-  e_x_cov_x = gauss_d2 * e_x_cov_x;
-
-  // Error checking for invalid values.
-  if (e_x_cov_x > 1 || e_x_cov_x < 0 || e_x_cov_x != e_x_cov_x) {
-    return 0;
-  }
-
-  // Reusable portion of Equation 6.12 and 6.13 [Magnusson 2009]
-  e_x_cov_x *= gauss_d1_;
-
-  Eigen::Matrix<float, 4, 6> c_inv4_x_point_gradient4 = c_inv4 * point_gradient4;
-  Eigen::Matrix<float, 6,
-    1> x_trans4_dot_c_inv4_x_point_gradient4 = x_trans4 * c_inv4_x_point_gradient4;
-
-  score_gradient.noalias() += (e_x_cov_x * x_trans4_dot_c_inv4_x_point_gradient4).cast<double>();
-
-  if (compute_hessian) {
-    Eigen::Matrix<float, 1, 4> x_trans4_x_c_inv4 = x_trans4 * c_inv4;
-    Eigen::Matrix<float, 6,
-      6> point_gradient4_colj_dot_c_inv4_x_point_gradient4_col_i = point_gradient4.transpose() *
-      c_inv4_x_point_gradient4;
-    Eigen::Matrix<float, 6, 1> x_trans4_dot_c_inv4_x_ext_point_hessian_4ij;
-
-    for (int i = 0; i < 6; i++) {
-      // Sigma_k^-1 d(T(x,p))/dpi, Reusable portion of Equation 6.12 and 6.13 [Magnusson 2009]
-      // Update gradient, Equation 6.12 [Magnusson 2009]
-      x_trans4_dot_c_inv4_x_ext_point_hessian_4ij.noalias() = x_trans4_x_c_inv4 *
-        point_hessian_.block<4, 6>(i * 4, 0);
-
-      for (int j = 0; j < hessian.cols(); j++) {
-        // Update hessian, Equation 6.13 [Magnusson 2009]
-        hessian(
-          i,
-          j) += e_x_cov_x *
-          (-gauss_d2 * x_trans4_dot_c_inv4_x_point_gradient4(i) *
-          x_trans4_dot_c_inv4_x_point_gradient4(j) +
-          x_trans4_dot_c_inv4_x_ext_point_hessian_4ij(j) +
-          point_gradient4_colj_dot_c_inv4_x_point_gradient4_col_i(j, i));
-      }
-    }
-  }
-
-  return score_inc;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
