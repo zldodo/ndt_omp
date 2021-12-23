@@ -370,11 +370,8 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
     Eigen::Matrix<double, 6, 1> score_gradient_pt = Eigen::Matrix<double, 6, 1>::Zero();
     Matrix6d hessian_pt = Matrix6d::Zero();
 
-    for (typename std::vector<TargetGridLeafConstPtr>::iterator neighborhood_it =
-      neighborhood.begin();
-      neighborhood_it != neighborhood.end(); neighborhood_it++)
+    for (const TargetGridLeafConstPtr cell : neighborhood)
     {
-      TargetGridLeafConstPtr cell = *neighborhood_it;
       PointSource x_pt = input_->points[idx];
       Eigen::Vector3d x(x_pt.x, x_pt.y, x_pt.z);
 
@@ -609,11 +606,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeHessian(
         break;
     }
 
-    for (typename std::vector<TargetGridLeafConstPtr>::iterator neighborhood_it =
-      neighborhood.begin();
-      neighborhood_it != neighborhood.end(); neighborhood_it++)
-    {
-      const TargetGridLeafConstPtr cell = *neighborhood_it;
+    for (const TargetGridLeafConstPtr cell : neighborhood) {
 
       PointSource x_pt = input_->points[idx];
       const Eigen::Vector3d x(x_pt.x, x_pt.y, x_pt.z);
@@ -998,13 +991,9 @@ double pclomp::NormalDistributionsTransform<PointSource, PointTarget>::calculate
         break;
     }
 
-    for (typename std::vector<TargetGridLeafConstPtr>::iterator neighborhood_it =
-      neighborhood.begin();
-      neighborhood_it != neighborhood.end(); neighborhood_it++)
+    for (const TargetGridLeafConstPtr cell : neighborhood)
     {
-      TargetGridLeafConstPtr cell = *neighborhood_it;
-
-      Eigen::Vector3d x_trans = Eigen::Vector3d(x_trans_pt.x, x_trans_pt.y, x_trans_pt.z);
+      Eigen::Vector3d x_trans(x_trans_pt.x, x_trans_pt.y, x_trans_pt.z);
 
       // Denorm point, x_k' in Equations 6.12 and 6.13 [Magnusson 2009]
       x_trans -= cell->getMean();
