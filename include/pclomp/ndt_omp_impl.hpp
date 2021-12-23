@@ -235,15 +235,16 @@ void computePointHessian(
   // Calculate second derivative of Transformation Equation 6.17 w.r.t. transform vector p.
   // Derivative w.r.t. ith and jth elements of transform vector corresponds to
   // the 3x1 block matrix starting at (3i,j), Equation 6.20 and 6.21 [Magnusson 2009]
-  point_hessian_.block<4, 1>((9 / 3) * 4, 3) = a;
-  point_hessian_.block<4, 1>((12 / 3) * 4, 3) = b;
-  point_hessian_.block<4, 1>((15 / 3) * 4, 3) = c;
-  point_hessian_.block<4, 1>((9 / 3) * 4, 4) = b;
-  point_hessian_.block<4, 1>((12 / 3) * 4, 4) = d;
-  point_hessian_.block<4, 1>((15 / 3) * 4, 4) = e;
-  point_hessian_.block<4, 1>((9 / 3) * 4, 5) = c;
-  point_hessian_.block<4, 1>((12 / 3) * 4, 5) = e;
-  point_hessian_.block<4, 1>((15 / 3) * 4, 5) = f;
+  point_hessian_.block<4, 1>(12, 3) = a;
+  point_hessian_.block<4, 1>(16, 3) = b;
+  point_hessian_.block<4, 1>(20, 3) = c;
+  point_hessian_.block<4, 1>(12, 4) = b;
+  point_hessian_.block<4, 1>(16, 4) = d;
+  point_hessian_.block<4, 1>(20, 4) = e;
+  point_hessian_.block<4, 1>(12, 5) = c;
+  point_hessian_.block<4, 1>(16, 5) = e;
+  point_hessian_.block<4, 1>(20, 5) = f;
+
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
