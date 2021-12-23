@@ -973,9 +973,7 @@ double pclomp::NormalDistributionsTransform<PointSource, PointTarget>::calculate
 {
   double score = 0;
 
-  for (std::size_t idx = 0; idx < trans_cloud.points.size(); idx++) {
-    PointSource x_trans_pt = trans_cloud.points[idx];
-
+  for (const PointSource x_trans_pt : trans_cloud) {
     // Find neighbors (Radius search has been experimentally faster than direct neighbor checking.
     std::vector<TargetGridLeafConstPtr> neighborhood;
     std::vector<float> distances;
