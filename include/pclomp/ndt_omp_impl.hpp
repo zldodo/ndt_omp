@@ -349,15 +349,6 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
   for (std::size_t idx = 0; idx < input_->points.size(); idx++) {
     int thread_n = omp_get_thread_num();
 
-    // Original Point and Transformed Point
-    PointSource x_pt, x_trans_pt;
-    // Original Point and Transformed Point (for math)
-    Eigen::Vector3d x, x_trans;
-    // Occupied Voxel
-    TargetGridLeafConstPtr cell;
-    // Inverse Covariance of Occupied Voxel
-    Eigen::Matrix3d c_inv;
-
     // Initialize Point Gradient and Hessian
     Eigen::Matrix<float, 4, 6> point_gradient_;
     Eigen::Matrix<float, 24, 6> point_hessian_;
@@ -365,7 +356,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
     point_gradient_.block<3, 3>(0, 0).setIdentity();
     point_hessian_.setZero();
 
-    x_trans_pt = trans_cloud.points[idx];
+    PointSource x_trans_pt = trans_cloud.points[idx];
 
     auto & neighborhood = neighborhoods[thread_n];
     auto & distances = distancess[thread_n];
@@ -395,16 +386,16 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
       neighborhood.begin();
       neighborhood_it != neighborhood.end(); neighborhood_it++)
     {
-      cell = *neighborhood_it;
-      x_pt = input_->points[idx];
-      x = Eigen::Vector3d(x_pt.x, x_pt.y, x_pt.z);
+      TargetGridLeafConstPtr cell = *neighborhood_it;
+      PointSource x_pt = input_->points[idx];
+      Eigen::Vector3d x(x_pt.x, x_pt.y, x_pt.z);
 
-      x_trans = Eigen::Vector3d(x_trans_pt.x, x_trans_pt.y, x_trans_pt.z);
+      Eigen::Vector3d x_trans(x_trans_pt.x, x_trans_pt.y, x_trans_pt.z);
 
       // Denorm point, x_k' in Equations 6.12 and 6.13 [Magnusson 2009]
       x_trans -= cell->getMean();
       // Uses precomputed covariance for speed.
-      c_inv = cell->getInverseCov();
+      Eigen::Matrix3d c_inv = cell->getInverseCov();
 
       // Compute derivative of transform function w.r.t. transform vector,
       // J_E and H_E in Equations 6.18 and 6.20 [Magnusson 2009]
