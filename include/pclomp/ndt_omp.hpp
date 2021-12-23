@@ -134,7 +134,7 @@ public:
    * \param[in] resolution side length of voxels
    */
   inline void
-  setResolution(float resolution)
+  setResolution(double resolution)
   {
     // Prevents unnecessary voxel initiations
     if (resolution_ != resolution) {
@@ -148,7 +148,7 @@ public:
   /** \brief Get voxel grid resolution.
    * \return side length of voxels
    */
-  inline float
+  inline double
   getResolution() const
   {
     return resolution_;
@@ -231,31 +231,6 @@ public:
   getFinalTransformationArray() const
   {
     return transformation_array_;
-  }
-
-  /** \brief Convert 6 element transformation vector to affine transformation.
-   * \param[in] x transformation vector of the form [x, y, z, roll, pitch, yaw]
-   * \param[out] trans affine transform corresponding to given transformation vector
-   */
-  static void
-  convertTransform(const Eigen::Matrix<double, 6, 1> & x, Eigen::Affine3f & trans)
-  {
-    trans = Eigen::Translation<float, 3>(float(x(0)), float(x(1)), float(x(2))) *
-      Eigen::AngleAxis<float>(float(x(3)), Eigen::Vector3f::UnitX()) *
-      Eigen::AngleAxis<float>(float(x(4)), Eigen::Vector3f::UnitY()) *
-      Eigen::AngleAxis<float>(float(x(5)), Eigen::Vector3f::UnitZ());
-  }
-
-  /** \brief Convert 6 element transformation vector to transformation matrix.
-   * \param[in] x transformation vector of the form [x, y, z, roll, pitch, yaw]
-   * \param[out] trans 4x4 transformation matrix corresponding to given transformation vector
-   */
-  static void
-  convertTransform(const Eigen::Matrix<double, 6, 1> & x, Eigen::Matrix4f & trans)
-  {
-    Eigen::Affine3f _affine;
-    convertTransform(x, _affine);
-    trans = _affine.matrix();
   }
 
   // negative log likelihood function
@@ -454,7 +429,7 @@ protected:
   //double fitness_epsilon_;
 
   /** \brief The side length of voxels. */
-  float resolution_;
+  double resolution_;
 
   /** \brief The maximum step length. */
   double step_size_;
@@ -474,7 +449,7 @@ protected:
    */
   Eigen::Vector3d j_ang_a_, j_ang_b_, j_ang_c_, j_ang_d_, j_ang_e_, j_ang_f_, j_ang_g_, j_ang_h_;
 
-  Eigen::Matrix<float, 8, 4> j_ang;
+  Eigen::Matrix<double, 8, 4> j_ang;
 
   /** \brief Precomputed Angular Hessian
    *
@@ -487,7 +462,7 @@ protected:
     h_ang_e1_, h_ang_e2_, h_ang_e3_,
     h_ang_f1_, h_ang_f2_, h_ang_f3_;
 
-  Eigen::Matrix<float, 16, 4> h_ang;
+  Eigen::Matrix<double, 16, 4> h_ang;
 
   /** \brief The first order derivative of the transformation of a point w.r.t. the transform vector, \f$ J_E \f$ in Equation 6.18 [Magnusson 2009]. */
   //      Eigen::Matrix<double, 3, 6> point_gradient_;

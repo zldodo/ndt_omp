@@ -124,14 +124,14 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransform
     transformPointCloud(output, output, guess);
   }
 
-  Eigen::Transform<float, 3, Eigen::Affine, Eigen::ColMajor> eig_transformation;
-  eig_transformation.matrix() = final_transformation_;
+  Eigen::Transform<double, 3, Eigen::Affine, Eigen::ColMajor> eig_transformation;
+  eig_transformation.matrix() = final_transformation_.template cast<double>();
   transformation_array_.clear();
   transformation_array_.push_back(final_transformation_);
 
   // Convert initial guess matrix to 6 element transformation vector
-  Eigen::Vector3d init_translation = eig_transformation.translation().cast<double>();
-  Eigen::Vector3d init_rotation = eig_transformation.rotation().eulerAngles(0, 1, 2).cast<double>();
+  Eigen::Vector3d init_translation = eig_transformation.translation();
+  Eigen::Vector3d init_rotation = eig_transformation.rotation().eulerAngles(0, 1, 2);
 
   Vector6d p;
   p << init_translation, init_rotation;
@@ -202,15 +202,15 @@ int omp_get_thread_num() {return 0;}
 
 void computePointGradient(
   const Eigen::Vector3d & x,
-  const Eigen::Matrix<float, 8, 4> & j_ang,
-  Eigen::Matrix<float, 4, 6> & point_gradient_)
+  const Eigen::Matrix<double, 8, 4> & j_ang,
+  Eigen::Matrix<double, 4, 6> & point_gradient_)
 {
-  Eigen::Vector4f x4(x(0), x(1), x(2), 0.0f);
+  Eigen::Vector4d x4(x(0), x(1), x(2), 0.0f);
 
   // Calculate first derivative of Transformation Equation 6.17 w.r.t. transform vector p.
   // Derivative w.r.t. ith element of transform vector corresponds to column i,
   // Equation 6.18 and 6.19 [Magnusson 2009]
-  Eigen::Matrix<float, 8, 1> x_j_ang = j_ang * x4;
+  Eigen::Matrix<double, 8, 1> x_j_ang = j_ang * x4;
 
   point_gradient_(1, 3) = x_j_ang(0);
   point_gradient_(2, 3) = x_j_ang(1);
@@ -224,20 +224,20 @@ void computePointGradient(
 
 void computePointHessian(
   const Eigen::Vector3d & x,
-  const Eigen::Matrix<float, 16, 4> & h_ang,
-  Eigen::Matrix<float, 24, 6> & point_hessian_)
+  const Eigen::Matrix<double, 16, 4> & h_ang,
+  Eigen::Matrix<double, 24, 6> & point_hessian_)
 {
-  Eigen::Vector4f x4(x(0), x(1), x(2), 0.0f);
+  Eigen::Vector4d x4(x(0), x(1), x(2), 0.0f);
 
-  Eigen::Matrix<float, 16, 1> x_h_ang = h_ang * x4;
+  Eigen::Matrix<double, 16, 1> x_h_ang = h_ang * x4;
 
   // Vectors from Equation 6.21 [Magnusson 2009]
-  Eigen::Vector4f a(0, x_h_ang(0), x_h_ang(1), 0.0f);
-  Eigen::Vector4f b(0, x_h_ang(2), x_h_ang(3), 0.0f);
-  Eigen::Vector4f c(0, x_h_ang(4), x_h_ang(5), 0.0f);
-  Eigen::Vector4f d(x_h_ang(6), x_h_ang(7), x_h_ang(8), 0.0f);
-  Eigen::Vector4f e(x_h_ang(9), x_h_ang(10), x_h_ang(11), 0.0f);
-  Eigen::Vector4f f(x_h_ang(12), x_h_ang(13), x_h_ang(14), 0.0f);
+  Eigen::Vector4d a(0, x_h_ang(0), x_h_ang(1), 0.0f);
+  Eigen::Vector4d b(0, x_h_ang(2), x_h_ang(3), 0.0f);
+  Eigen::Vector4d c(0, x_h_ang(4), x_h_ang(5), 0.0f);
+  Eigen::Vector4d d(x_h_ang(6), x_h_ang(7), x_h_ang(8), 0.0f);
+  Eigen::Vector4d e(x_h_ang(9), x_h_ang(10), x_h_ang(11), 0.0f);
+  Eigen::Vector4d f(x_h_ang(12), x_h_ang(13), x_h_ang(14), 0.0f);
 
   // Calculate second derivative of Transformation Equation 6.17 w.r.t. transform vector p.
   // Derivative w.r.t. ith and jth elements of transform vector corresponds to
@@ -257,22 +257,22 @@ void computePointHessian(
 double updateDerivatives(
   Vector6d & score_gradient,
   Matrix6d & hessian,
-  const Eigen::Matrix<float, 4, 6> & point_gradient4,
-  const Eigen::Matrix<float, 24, 6> & point_hessian_,
+  const Eigen::Matrix<double, 4, 6> & point_gradient4,
+  const Eigen::Matrix<double, 24, 6> & point_hessian_,
   const Eigen::Vector3d & x_trans, const Eigen::Matrix3d & c_inv,
   const double gauss_d1_, const double gauss_d2_,
   bool compute_hessian = true)
 {
-  Eigen::Matrix<float, 1, 4> x_trans4(x_trans[0], x_trans[1], x_trans[2], 0.0f);
-  Eigen::Matrix4f c_inv4 = Eigen::Matrix4f::Zero();
-  c_inv4.topLeftCorner(3, 3) = c_inv.cast<float>();
+  Eigen::Matrix<double, 1, 4> x_trans4(x_trans[0], x_trans[1], x_trans[2], 0.0f);
+  Eigen::Matrix4d c_inv4 = Eigen::Matrix4d::Zero();
+  c_inv4.topLeftCorner(3, 3) = c_inv;
 
-  float gauss_d2 = gauss_d2_;
+  double gauss_d2 = gauss_d2_;
 
   // e^(-d_2/2 * (x_k - mu_k)^T Sigma_k^-1 (x_k - mu_k)) Equation 6.9 [Magnusson 2009]
-  float e_x_cov_x = exp(-gauss_d2 * x_trans4.dot(x_trans4 * c_inv4) * 0.5f);
+  double e_x_cov_x = exp(-gauss_d2 * x_trans4.dot(x_trans4 * c_inv4) * 0.5f);
   // Calculate probability of transformed points existence, Equation 6.9 [Magnusson 2009]
-  float score_inc = -gauss_d1_ * e_x_cov_x;
+  double score_inc = -gauss_d1_ * e_x_cov_x;
 
   e_x_cov_x = gauss_d2 * e_x_cov_x;
 
@@ -284,19 +284,19 @@ double updateDerivatives(
   // Reusable portion of Equation 6.12 and 6.13 [Magnusson 2009]
   e_x_cov_x *= gauss_d1_;
 
-  Eigen::Matrix<float, 4, 6> c_inv4_x_point_gradient4 = c_inv4 * point_gradient4;
-  Eigen::Matrix<float, 6, 1> g = x_trans4 * c_inv4_x_point_gradient4;
+  Eigen::Matrix<double, 4, 6> c_inv4_x_point_gradient4 = c_inv4 * point_gradient4;
+  Eigen::Matrix<double, 6, 1> g = x_trans4 * c_inv4_x_point_gradient4;
 
-  score_gradient.noalias() += (e_x_cov_x * g).cast<double>();
+  score_gradient.noalias() += e_x_cov_x * g;
 
   if (compute_hessian) {
-    Eigen::Matrix<float, 1, 4> xc = x_trans4 * c_inv4;
-    Eigen::Matrix<float, 6, 6> m = point_gradient4.transpose() * c_inv4_x_point_gradient4;
+    Eigen::Matrix<double, 1, 4> xc = x_trans4 * c_inv4;
+    Eigen::Matrix<double, 6, 6> m = point_gradient4.transpose() * c_inv4_x_point_gradient4;
 
     for (int i = 0; i < 6; i++) {
       // Sigma_k^-1 d(T(x,p))/dpi, Reusable portion of Equation 6.12 and 6.13 [Magnusson 2009]
       // Update gradient, Equation 6.12 [Magnusson 2009]
-      Eigen::Matrix<float, 6, 1> h = xc * point_hessian_.block<4, 6>(i * 4, 0);
+      Eigen::Matrix<double, 6, 1> h = xc * point_hessian_.block<4, 6>(i * 4, 0);
 
       for (int j = 0; j < hessian.cols(); j++) {
         // Update hessian, Equation 6.13 [Magnusson 2009]
@@ -345,8 +345,8 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
     int thread_n = omp_get_thread_num();
 
     // Initialize Point Gradient and Hessian
-    Eigen::Matrix<float, 4, 6> point_gradient_;
-    Eigen::Matrix<float, 24, 6> point_hessian_;
+    Eigen::Matrix<double, 4, 6> point_gradient_;
+    Eigen::Matrix<double, 24, 6> point_hessian_;
     point_gradient_.setZero();
     point_gradient_.block<3, 3>(0, 0).setIdentity();
     point_hessian_.setZero();
