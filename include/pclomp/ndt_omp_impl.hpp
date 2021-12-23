@@ -414,31 +414,31 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computePointDeri
   Eigen::Vector3d & x, Eigen::Matrix<float, 4, 6> & point_gradient_, Eigen::Matrix<float, 24,
   6> & point_hessian_, bool compute_hessian) const
 {
-  Eigen::Vector4f x4(x[0], x[1], x[2], 0.0f);
+  Eigen::Vector4f x4(x(0), x(1), x(2), 0.0f);
 
   // Calculate first derivative of Transformation Equation 6.17 w.r.t. transform vector p.
   // Derivative w.r.t. ith element of transform vector corresponds to column i, Equation 6.18 and 6.19 [Magnusson 2009]
   Eigen::Matrix<float, 8, 1> x_j_ang = j_ang * x4;
 
-  point_gradient_(1, 3) = x_j_ang[0];
-  point_gradient_(2, 3) = x_j_ang[1];
-  point_gradient_(0, 4) = x_j_ang[2];
-  point_gradient_(1, 4) = x_j_ang[3];
-  point_gradient_(2, 4) = x_j_ang[4];
-  point_gradient_(0, 5) = x_j_ang[5];
-  point_gradient_(1, 5) = x_j_ang[6];
-  point_gradient_(2, 5) = x_j_ang[7];
+  point_gradient_(1, 3) = x_j_ang(0);
+  point_gradient_(2, 3) = x_j_ang(1);
+  point_gradient_(0, 4) = x_j_ang(2);
+  point_gradient_(1, 4) = x_j_ang(3);
+  point_gradient_(2, 4) = x_j_ang(4);
+  point_gradient_(0, 5) = x_j_ang(5);
+  point_gradient_(1, 5) = x_j_ang(6);
+  point_gradient_(2, 5) = x_j_ang(7);
 
   if (compute_hessian) {
     Eigen::Matrix<float, 16, 1> x_h_ang = h_ang * x4;
 
     // Vectors from Equation 6.21 [Magnusson 2009]
-    Eigen::Vector4f a(0, x_h_ang[0], x_h_ang[1], 0.0f);
-    Eigen::Vector4f b(0, x_h_ang[2], x_h_ang[3], 0.0f);
-    Eigen::Vector4f c(0, x_h_ang[4], x_h_ang[5], 0.0f);
-    Eigen::Vector4f d(x_h_ang[6], x_h_ang[7], x_h_ang[8], 0.0f);
-    Eigen::Vector4f e(x_h_ang[9], x_h_ang[10], x_h_ang[11], 0.0f);
-    Eigen::Vector4f f(x_h_ang[12], x_h_ang[13], x_h_ang[14], 0.0f);
+    Eigen::Vector4f a(0, x_h_ang(0), x_h_ang(1), 0.0f);
+    Eigen::Vector4f b(0, x_h_ang(2), x_h_ang(3), 0.0f);
+    Eigen::Vector4f c(0, x_h_ang(4), x_h_ang(5), 0.0f);
+    Eigen::Vector4f d(x_h_ang(6), x_h_ang(7), x_h_ang(8), 0.0f);
+    Eigen::Vector4f e(x_h_ang(9), x_h_ang(10), x_h_ang(11), 0.0f);
+    Eigen::Vector4f f(x_h_ang(12), x_h_ang(13), x_h_ang(14), 0.0f);
 
     // Calculate second derivative of Transformation Equation 6.17 w.r.t. transform vector p.
     // Derivative w.r.t. ith and jth elements of transform vector corresponds to the 3x1 block matrix starting at (3i,j), Equation 6.20 and 6.21 [Magnusson 2009]
