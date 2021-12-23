@@ -381,10 +381,9 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
     {
       const Eigen::Vector3d x = point_to_vector3d(input_->points[idx]);
 
-      Eigen::Vector3d x_trans = point_to_vector3d(x_trans_pt);
-
       // Denorm point, x_k' in Equations 6.12 and 6.13 [Magnusson 2009]
-      x_trans -= cell->getMean();
+      const Eigen::Vector3d x_trans = point_to_vector3d(x_trans_pt) - cell->getMean();
+
       // Uses precomputed covariance for speed.
       Eigen::Matrix3d c_inv = cell->getInverseCov();
 
@@ -617,10 +616,9 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeHessian(
       PointSource x_pt = input_->points[idx];
       const Eigen::Vector3d x = point_to_vector3d(x_pt);
 
-      Eigen::Vector3d x_trans = point_to_vector3d(x_trans_pt);
-
       // Denorm point, x_k' in Equations 6.12 and 6.13 [Magnusson 2009]
-      x_trans -= cell->getMean();
+      const Eigen::Vector3d x_trans = point_to_vector3d(x_trans_pt) - cell->getMean();
+
       // Uses precomputed covariance for speed.
       const Eigen::Matrix3d c_inv = cell->getInverseCov();
 
@@ -999,10 +997,9 @@ double pclomp::NormalDistributionsTransform<PointSource, PointTarget>::calculate
 
     for (const TargetGridLeafConstPtr cell : neighborhood)
     {
-      Eigen::Vector3d x_trans = point_to_vector3d(x_trans_pt);
-
       // Denorm point, x_k' in Equations 6.12 and 6.13 [Magnusson 2009]
-      x_trans -= cell->getMean();
+      const Eigen::Vector3d x_trans = point_to_vector3d(x_trans_pt) - cell->getMean();
+
       // Uses precomputed covariance for speed.
       Eigen::Matrix3d c_inv = cell->getInverseCov();
 
