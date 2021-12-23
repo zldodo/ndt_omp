@@ -385,7 +385,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
       const Eigen::Vector3d x_trans = point_to_vector3d(x_trans_pt) - cell->getMean();
 
       // Uses precomputed covariance for speed.
-      Eigen::Matrix3d c_inv = cell->getInverseCov();
+      const Eigen::Matrix3d c_inv = cell->getInverseCov();
 
       // Compute derivative of transform function w.r.t. transform vector,
       // J_E and H_E in Equations 6.18 and 6.20 [Magnusson 2009]
@@ -590,7 +590,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeHessian(
 
   // Update hessian for each point, line 17 in Algorithm 2 [Magnusson 2009]
   for (size_t idx = 0; idx < input_->points.size(); idx++) {
-    PointSource x_trans_pt = trans_cloud.points[idx];
+    const PointSource x_trans_pt = trans_cloud.points[idx];
 
     // Find neighbors (Radius search has been experimentally faster than direct neighbor checking.
     std::vector<TargetGridLeafConstPtr> neighborhood;
@@ -612,9 +612,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeHessian(
     }
 
     for (const TargetGridLeafConstPtr cell : neighborhood) {
-
-      PointSource x_pt = input_->points[idx];
-      const Eigen::Vector3d x = point_to_vector3d(x_pt);
+      const Eigen::Vector3d x = point_to_vector3d(input_->points[idx]);
 
       // Denorm point, x_k' in Equations 6.12 and 6.13 [Magnusson 2009]
       const Eigen::Vector3d x_trans = point_to_vector3d(x_trans_pt) - cell->getMean();
@@ -999,7 +997,7 @@ double pclomp::NormalDistributionsTransform<PointSource, PointTarget>::calculate
       const Eigen::Vector3d x_trans = point_to_vector3d(x_trans_pt) - cell->getMean();
 
       // Uses precomputed covariance for speed.
-      Eigen::Matrix3d c_inv = cell->getInverseCov();
+      const Eigen::Matrix3d c_inv = cell->getInverseCov();
 
       // e^(-d_2/2 * (x_k - mu_k)^T Sigma_k^-1 (x_k - mu_k)) Equation 6.9 [Magnusson 2009]
       double e_x_cov_x = exp(-gauss_d2_ * x_trans.dot(c_inv * x_trans) / 2);
