@@ -288,20 +288,22 @@ updateDerivatives(
 
   const Vector6d score_gradient = e_x_cov_x * g;
 
+  if (!compute_hessian) {
+    return {score_gradient, Matrix6d::Zero(), score_inc};
+  }
+
+  const Eigen::Matrix<double, 1, 4> xc = x_trans4 * c_inv4;
+  const Eigen::Matrix<double, 6, 6> m = point_gradient4.transpose() * c_inv4_x_point_gradient4;
+
   Matrix6d hessian = Matrix6d::Zero();
-  if (compute_hessian) {
-    Eigen::Matrix<double, 1, 4> xc = x_trans4 * c_inv4;
-    Eigen::Matrix<double, 6, 6> m = point_gradient4.transpose() * c_inv4_x_point_gradient4;
+  for (int i = 0; i < 6; i++) {
+    // Sigma_k^-1 d(T(x,p))/dpi, Reusable portion of Equation 6.12 and 6.13 [Magnusson 2009]
+    // Update gradient, Equation 6.12 [Magnusson 2009]
+    const Eigen::Matrix<double, 6, 1> h = xc * point_hessian_.block<4, 6>(i * 4, 0);
 
-    for (int i = 0; i < 6; i++) {
-      // Sigma_k^-1 d(T(x,p))/dpi, Reusable portion of Equation 6.12 and 6.13 [Magnusson 2009]
-      // Update gradient, Equation 6.12 [Magnusson 2009]
-      Eigen::Matrix<double, 6, 1> h = xc * point_hessian_.block<4, 6>(i * 4, 0);
-
-      for (int j = 0; j < hessian.cols(); j++) {
-        // Update hessian, Equation 6.13 [Magnusson 2009]
-        hessian(i, j) += e_x_cov_x * (-gauss_d2 * g(i) * g(j) + h(j) + m(j, i));
-      }
+    for (int j = 0; j < hessian.cols(); j++) {
+      // Update hessian, Equation 6.13 [Magnusson 2009]
+      hessian(i, j) += e_x_cov_x * (-gauss_d2 * g(i) * g(j) + h(j) + m(j, i));
     }
   }
 
