@@ -266,14 +266,12 @@ updateDerivatives(
   Eigen::Matrix4d c_inv4 = Eigen::Matrix4d::Zero();
   c_inv4.topLeftCorner(3, 3) = c_inv;
 
-  double gauss_d2 = gauss_d2_;
-
   // e^(-d_2/2 * (x_k - mu_k)^T Sigma_k^-1 (x_k - mu_k)) Equation 6.9 [Magnusson 2009]
-  double e_x_cov_x = exp(-gauss_d2 * x_trans4.dot(x_trans4 * c_inv4) * 0.5f);
+  double e_x_cov_x = exp(-gauss_d2_ * x_trans4.dot(x_trans4 * c_inv4) * 0.5f);
   // Calculate probability of transformed points existence, Equation 6.9 [Magnusson 2009]
   double score_inc = -gauss_d1_ * e_x_cov_x;
 
-  e_x_cov_x = gauss_d2 * e_x_cov_x;
+  e_x_cov_x = gauss_d2_ * e_x_cov_x;
 
   // Error checking for invalid values.
   if (e_x_cov_x > 1 || e_x_cov_x < 0 || e_x_cov_x != e_x_cov_x) {
@@ -303,7 +301,7 @@ updateDerivatives(
 
     for (int j = 0; j < hessian.cols(); j++) {
       // Update hessian, Equation 6.13 [Magnusson 2009]
-      hessian(i, j) += e_x_cov_x * (-gauss_d2 * g(i) * g(j) + h(j) + m(j, i));
+      hessian(i, j) += e_x_cov_x * (-gauss_d2_ * g(i) * g(j) + h(j) + m(j, i));
     }
   }
 
