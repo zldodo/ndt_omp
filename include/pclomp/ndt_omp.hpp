@@ -181,15 +181,6 @@ public:
     return outlier_ratio_;
   }
 
-  /** \brief Set/change the point cloud outlier ratio.
-   * \param[in] outlier_ratio outlier ratio
-   */
-  inline void
-  setOutlierRatio(double outlier_ratio)
-  {
-    outlier_ratio_ = outlier_ratio;
-  }
-
   inline void setNeighborhoodSearchMethod(NeighborSearchMethod method)
   {
     search_method = method;
