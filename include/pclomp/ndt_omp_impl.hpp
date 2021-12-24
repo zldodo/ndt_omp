@@ -281,8 +281,7 @@ updateDerivatives(
   // Reusable portion of Equation 6.12 and 6.13 [Magnusson 2009]
   e_x_cov_x *= gauss_d1_;
 
-  Eigen::Matrix<double, 4, 6> c_inv4_x_point_gradient4 = c_inv4 * point_gradient4;
-  Eigen::Matrix<double, 6, 1> g = x_trans4 * c_inv4_x_point_gradient4;
+  const Eigen::Matrix<double, 6, 1> g = x_trans4 * c_inv4 * point_gradient4;
 
   const Vector6d score_gradient = e_x_cov_x * g;
 
@@ -291,7 +290,7 @@ updateDerivatives(
   }
 
   const Eigen::Matrix<double, 1, 4> xc = x_trans4 * c_inv4;
-  const Eigen::Matrix<double, 6, 6> m = point_gradient4.transpose() * c_inv4_x_point_gradient4;
+  const Eigen::Matrix<double, 6, 6> m = point_gradient4.transpose() * c_inv4 * point_gradient4;
 
   Matrix6d hessian = Matrix6d::Zero();
   for (int i = 0; i < 6; i++) {
