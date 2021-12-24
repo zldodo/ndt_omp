@@ -254,9 +254,8 @@ void computePointHessian(
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-double updateDerivatives(
-  Vector6d & score_gradient,
-  Matrix6d & hessian,
+std::tuple<Vector6d, Matrix6d, double>
+updateDerivatives(
   const Eigen::Matrix<double, 4, 6> & point_gradient4,
   const Eigen::Matrix<double, 24, 6> & point_hessian_,
   const Eigen::Vector3d & x_trans, const Eigen::Matrix3d & c_inv,
@@ -278,7 +277,7 @@ double updateDerivatives(
 
   // Error checking for invalid values.
   if (e_x_cov_x > 1 || e_x_cov_x < 0 || e_x_cov_x != e_x_cov_x) {
-    return 0;
+    return {Vector6d::Zero(), Matrix6d::Zero(), 0};
   }
 
   // Reusable portion of Equation 6.12 and 6.13 [Magnusson 2009]
@@ -287,8 +286,9 @@ double updateDerivatives(
   Eigen::Matrix<double, 4, 6> c_inv4_x_point_gradient4 = c_inv4 * point_gradient4;
   Eigen::Matrix<double, 6, 1> g = x_trans4 * c_inv4_x_point_gradient4;
 
-  score_gradient.noalias() += e_x_cov_x * g;
+  const Vector6d score_gradient = e_x_cov_x * g;
 
+  Matrix6d hessian = Matrix6d::Zero();
   if (compute_hessian) {
     Eigen::Matrix<double, 1, 4> xc = x_trans4 * c_inv4;
     Eigen::Matrix<double, 6, 6> m = point_gradient4.transpose() * c_inv4_x_point_gradient4;
@@ -305,7 +305,7 @@ double updateDerivatives(
     }
   }
 
-  return score_inc;
+  return {score_gradient, hessian, score_inc};
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -389,9 +389,12 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
       computePointHessian(x, h_ang, point_hessian_);
       // Update score, gradient and hessian, lines 19-21 in Algorithm 2,
       // according to Equations 6.10, 6.12 and 6.13, respectively [Magnusson 2009]
-      score_pt += updateDerivatives(
-        score_gradient_pt, hessian_pt, point_gradient_, point_hessian_,
+      const auto [score_gradient_inc, hessian_inc, score_inc] = updateDerivatives(
+        point_gradient_, point_hessian_,
         x_trans, c_inv, gauss_d1_, gauss_d2_, compute_hessian);
+      score_gradient_pt += score_gradient_inc;
+      hessian_pt += hessian_inc;
+      score_pt += score_inc;
     }
 
     scores[idx] = score_pt;
