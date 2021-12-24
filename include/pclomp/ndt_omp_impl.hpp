@@ -374,13 +374,12 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
     Vector6d score_gradient_pt = Vector6d::Zero();
     Matrix6d hessian_pt = Matrix6d::Zero();
 
+    const Eigen::Vector3d x = point_to_vector3d(input_->points[idx]);
+    const Eigen::Vector3d x_trans_ref = point_to_vector3d(x_trans_pt);
     for (const TargetGridLeafConstPtr cell : neighborhood)
     {
-      const Eigen::Vector3d x = point_to_vector3d(input_->points[idx]);
-
       // Denorm point, x_k' in Equations 6.12 and 6.13 [Magnusson 2009]
-      const Eigen::Vector3d x_trans = point_to_vector3d(x_trans_pt) - cell->getMean();
-
+      const Eigen::Vector3d x_trans = x_trans_ref - cell->getMean();
       // Uses precomputed covariance for speed.
       const Eigen::Matrix3d c_inv = cell->getInverseCov();
 
@@ -608,12 +607,11 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeHessian(
         break;
     }
 
+    const Eigen::Vector3d x = point_to_vector3d(input_->points[idx]);
+    const Eigen::Vector3d x_trans_ref = point_to_vector3d(x_trans_pt);
     for (const TargetGridLeafConstPtr cell : neighborhood) {
-      const Eigen::Vector3d x = point_to_vector3d(input_->points[idx]);
-
       // Denorm point, x_k' in Equations 6.12 and 6.13 [Magnusson 2009]
-      const Eigen::Vector3d x_trans = point_to_vector3d(x_trans_pt) - cell->getMean();
-
+      const Eigen::Vector3d x_trans = x_trans_ref - cell->getMean();
       // Uses precomputed covariance for speed.
       const Eigen::Matrix3d c_inv = cell->getInverseCov();
 
@@ -988,11 +986,11 @@ double pclomp::NormalDistributionsTransform<PointSource, PointTarget>::calculate
         break;
     }
 
+    const Eigen::Vector3d x_trans_ref = point_to_vector3d(x_trans_pt);
     for (const TargetGridLeafConstPtr cell : neighborhood)
     {
       // Denorm point, x_k' in Equations 6.12 and 6.13 [Magnusson 2009]
-      const Eigen::Vector3d x_trans = point_to_vector3d(x_trans_pt) - cell->getMean();
-
+      const Eigen::Vector3d x_trans = x_trans_ref - cell->getMean();
       // Uses precomputed covariance for speed.
       const Eigen::Matrix3d c_inv = cell->getInverseCov();
 
