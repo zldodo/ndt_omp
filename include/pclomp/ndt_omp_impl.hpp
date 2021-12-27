@@ -143,7 +143,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransform
 
   // Calculate derivatives of initial transform vector, subsequent derivative calculations are done in the step length determination.
   Vector6d score_gradient;
-  score = computeDerivatives(score_gradient, hessian, output, p);
+  std::tie(score_gradient, hessian, score) = computeDerivatives(output, p);
 
   while (!converged_) {
     // Solve for decent direction using newton method, line 23 in Algorithm 2 [Magnusson 2009]
@@ -309,10 +309,8 @@ updateDerivatives(
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<typename PointSource, typename PointTarget>
-double
+std::tuple<Vector6d, Matrix6d, double>
 pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivatives(
-  Vector6d & score_gradient,
-  Matrix6d & hessian,
   const PointCloudSource & trans_cloud,
   const Vector6d & p,
   const bool compute_hessian)
@@ -390,8 +388,8 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
     hessians[idx].noalias() = hessian_pt;
   }
 
-  score_gradient.setZero();
-  hessian.setZero();
+  Vector6d score_gradient = Vector6d::Zero();
+  Matrix6d hessian = Matrix6d::Zero();
   double score = 0;
 
   // Ensure that the result is invariant against the summing up order
@@ -401,7 +399,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
     hessian += hessians[i];
   }
 
-  return score;
+  return {score_gradient, hessian, score};
 }
 
 double round_cos(const double angle) {
@@ -861,7 +859,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeStepLengt
 
   // Updates score, gradient and hessian.  Hessian calculation is unnecessary but testing showed that most step calculations use the
   // initial step suggestion and recalculation the reusable portions of the hessian would intail more computation time.
-  score = computeDerivatives(score_gradient, hessian, trans_cloud, x_t, true);
+  std::tie(score_gradient, hessian, score) = computeDerivatives(trans_cloud, x_t, true);
 
   // Calculate phi(alpha_t)
   double phi_t = -score;
@@ -902,7 +900,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeStepLengt
     transformPointCloud(*input_, trans_cloud, final_transformation_);
 
     // Updates score, gradient. Values stored to prevent wasted computation.
-    score = computeDerivatives(score_gradient, hessian, trans_cloud, x_t, false);
+    std::tie(score_gradient, hessian, score) = computeDerivatives(trans_cloud, x_t, false);
 
     // Calculate phi(alpha_t+)
     phi_t = -score;

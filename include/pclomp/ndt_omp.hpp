@@ -279,10 +279,8 @@ protected:
    * \param[in] p the current transform vector
    * \param[in] compute_hessian flag to calculate hessian, unnecessary for step calculation.
    */
-  double
+  std::tuple<Eigen::Matrix<double, 6, 1>, Eigen::Matrix<double, 6, 6>, double>
   computeDerivatives(
-    Eigen::Matrix<double, 6, 1> & score_gradient,
-    Eigen::Matrix<double, 6, 6> & hessian,
     const PointCloudSource & trans_cloud,
     const Eigen::Matrix<double, 6, 1> & p,
     const bool compute_hessian = true);
