@@ -322,6 +322,75 @@ Matrix6d computeScoreHessian(
   return hessian;
 }
 
+double round_cos(const double angle) {
+  if (fabs(angle) < 10e-5) {
+    return 1.0;
+  }
+  return cos(angle);
+}
+
+double round_sin(const double angle) {
+  if (fabs(angle) < 10e-5) {
+    return 0.0;
+  }
+  return sin(angle);
+}
+
+Eigen::Matrix<double, 8, 4> computeAngularGradient(const Eigen::Vector3d & angles)
+{
+  const double cx = round_cos(angles(0));
+  const double sx = round_sin(angles(0));
+  const double cy = round_cos(angles(1));
+  const double sy = round_sin(angles(1));
+  const double cz = round_cos(angles(2));
+  const double sz = round_sin(angles(2));
+
+  Eigen::Matrix<double, 8, 4> j_ang;
+  j_ang.row(0) << -sx * sz + cx * sy * cz, -sx * cz - cx * sy * sz, -cx * cy, 0.0f;
+  j_ang.row(1) << cx * sz + sx * sy * cz, cx * cz - sx * sy * sz, -sx * cy, 0.0f;
+  j_ang.row(2) << -sy * cz, sy * sz, cy, 0.0f;
+  j_ang.row(3) << sx * cy * cz, -sx * cy * sz, sx * sy, 0.0f;
+  j_ang.row(4) << -cx * cy * cz, cx * cy * sz, -cx * sy, 0.0f;
+  j_ang.row(5) << -cy * sz, -cy * cz, 0, 0.0f;
+  j_ang.row(6) << cx * cz - sx * sy * sz, -cx * sz - sx * sy * cz, 0, 0.0f;
+  j_ang.row(7) << sx * cz + cx * sy * sz, cx * sy * cz - sx * sz, 0, 0.0f;
+  return j_ang;
+}
+
+Eigen::Matrix<double, 16, 4> computeAngularHessian(const Eigen::Vector3d & angles)
+{
+  const double cx = round_cos(angles(0));
+  const double sx = round_sin(angles(0));
+  const double cy = round_cos(angles(1));
+  const double sy = round_sin(angles(1));
+  const double cz = round_cos(angles(2));
+  const double sz = round_sin(angles(2));
+
+  Eigen::Matrix<double, 16, 4> h_ang;
+  h_ang.row(0) << -cx * sz - sx * sy * cz, -cx * cz + sx * sy * sz, sx * cy, 0.0f;    // a2
+  h_ang.row(1) << -sx * sz + cx * sy * cz, -cx * sy * sz - sx * cz, -cx * cy, 0.0f;   // a3
+
+  h_ang.row(2) << cx * cy * cz, -cx * cy * sz, cx * sy, 0.0f;                   // b2
+  h_ang.row(3) << sx * cy * cz, -sx * cy * sz, sx * sy, 0.0f;                   // b3
+
+  h_ang.row(4) << -sx * cz - cx * sy * sz, sx * sz - cx * sy * cz, 0, 0.0f;     // c2
+  h_ang.row(5) << cx * cz - sx * sy * sz, -sx * sy * cz - cx * sz, 0, 0.0f;     // c3
+
+  h_ang.row(6) << -cy * cz, cy * sz, sy, 0.0f;                                  // d1
+  h_ang.row(7) << -sx * sy * cz, sx * sy * sz, sx * cy, 0.0f;                   // d2
+  h_ang.row(8) << cx * sy * cz, -cx * sy * sz, -cx * cy, 0.0f;                  // d3
+
+  h_ang.row(9) << sy * sz, sy * cz, 0, 0.0f;                                    // e1
+  h_ang.row(10) << -sx * cy * sz, -sx * cy * cz, 0, 0.0f;                       // e2
+  h_ang.row(11) << cx * cy * sz, cx * cy * cz, 0, 0.0f;                         // e3
+
+  h_ang.row(12) << -cy * cz, cy * sz, 0, 0.0f;                                  // f1
+  h_ang.row(13) << -cx * sz - sx * sy * cz, -cx * cz + sx * sy * sz, 0, 0.0f;   // f2
+  h_ang.row(14) << -sx * sz + cx * sy * cz, -cx * sy * sz - sx * cz, 0, 0.0f;   // f3
+
+  return h_ang;
+}
+
 template<typename PointSource, typename PointTarget>
 std::tuple<Vector6d, Matrix6d, double>
 pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivatives(
@@ -335,6 +404,8 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
 
   // Precompute Angular Derivatives (eq. 6.19 and 6.21)[Magnusson 2009]
   computeAngleDerivatives(p);
+  const Eigen::Matrix<double, 8, 4> j_ang = computeAngularGradient(p.tail(3));
+  const Eigen::Matrix<double, 16, 4> h_ang = computeAngularHessian(p.tail(3));
 
   // Update gradient and hessian for each point, line 17 in Algorithm 2 [Magnusson 2009]
 #pragma omp parallel for num_threads(num_threads_) schedule(guided, 8)
@@ -408,20 +479,6 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
   return {gradient, hessian, score};
 }
 
-double round_cos(const double angle) {
-  if (fabs(angle) < 10e-5) {
-    return 1.0;
-  }
-  return cos(angle);
-}
-
-double round_sin(const double angle) {
-  if (fabs(angle) < 10e-5) {
-    return 0.0;
-  }
-  return sin(angle);
-}
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<typename PointSource, typename PointTarget>
 void
@@ -446,16 +503,6 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeAngleDeri
   j_ang_g_ << cx * cz - sx * sy * sz, -cx * sz - sx * sy * cz, 0;
   j_ang_h_ << sx * cz + cx * sy * sz, cx * sy * cz - sx * sz, 0;
 
-  j_ang.setZero();
-  j_ang.row(0) << -sx * sz + cx * sy * cz, -sx * cz - cx * sy * sz, -cx * cy, 0.0f;
-  j_ang.row(1) << cx * sz + sx * sy * cz, cx * cz - sx * sy * sz, -sx * cy, 0.0f;
-  j_ang.row(2) << -sy * cz, sy * sz, cy, 0.0f;
-  j_ang.row(3) << sx * cy * cz, -sx * cy * sz, sx * sy, 0.0f;
-  j_ang.row(4) << -cx * cy * cz, cx * cy * sz, -cx * sy, 0.0f;
-  j_ang.row(5) << -cy * sz, -cy * cz, 0, 0.0f;
-  j_ang.row(6) << cx * cz - sx * sy * sz, -cx * sz - sx * sy * cz, 0, 0.0f;
-  j_ang.row(7) << sx * cz + cx * sy * sz, cx * sy * cz - sx * sz, 0, 0.0f;
-
   // Precomputed angular hessian components.
   // Letters correspond to Equation 6.21 and numbers correspond to row index [Magnusson 2009]
   h_ang_a2_ << -cx * sz - sx * sy * cz, -cx * cz + sx * sy * sz, sx * cy;
@@ -478,28 +525,6 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeAngleDeri
   h_ang_f1_ << -cy * cz, cy * sz, 0;
   h_ang_f2_ << -cx * sz - sx * sy * cz, -cx * cz + sx * sy * sz, 0;
   h_ang_f3_ << -sx * sz + cx * sy * cz, -cx * sy * sz - sx * cz, 0;
-
-  h_ang.setZero();
-  h_ang.row(0) << -cx * sz - sx * sy * cz, -cx * cz + sx * sy * sz, sx * cy, 0.0f;    // a2
-  h_ang.row(1) << -sx * sz + cx * sy * cz, -cx * sy * sz - sx * cz, -cx * cy, 0.0f;   // a3
-
-  h_ang.row(2) << cx * cy * cz, -cx * cy * sz, cx * sy, 0.0f;                   // b2
-  h_ang.row(3) << sx * cy * cz, -sx * cy * sz, sx * sy, 0.0f;                   // b3
-
-  h_ang.row(4) << -sx * cz - cx * sy * sz, sx * sz - cx * sy * cz, 0, 0.0f;     // c2
-  h_ang.row(5) << cx * cz - sx * sy * sz, -sx * sy * cz - cx * sz, 0, 0.0f;     // c3
-
-  h_ang.row(6) << -cy * cz, cy * sz, sy, 0.0f;                                  // d1
-  h_ang.row(7) << -sx * sy * cz, sx * sy * sz, sx * cy, 0.0f;                   // d2
-  h_ang.row(8) << cx * sy * cz, -cx * sy * sz, -cx * cy, 0.0f;                  // d3
-
-  h_ang.row(9) << sy * sz, sy * cz, 0, 0.0f;                                    // e1
-  h_ang.row(10) << -sx * cy * sz, -sx * cy * cz, 0, 0.0f;                       // e2
-  h_ang.row(11) << cx * cy * sz, cx * cy * cz, 0, 0.0f;                         // e3
-
-  h_ang.row(12) << -cy * cz, cy * sz, 0, 0.0f;                                  // f1
-  h_ang.row(13) << -cx * sz - sx * sy * cz, -cx * cz + sx * sy * sz, 0, 0.0f;   // f2
-  h_ang.row(14) << -sx * sz + cx * sy * cz, -cx * sy * sz - sx * cz, 0, 0.0f;   // f3
 }
 
 Eigen::Matrix<double, 3, 6> computePointGradient(
