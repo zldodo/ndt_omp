@@ -404,8 +404,6 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
   std::vector<Vector6d, Eigen::aligned_allocator<Vector6d>> gradients(input_->points.size());
   std::vector<Matrix6d, Eigen::aligned_allocator<Matrix6d>> hessians(input_->points.size());
 
-  // Precompute Angular Derivatives (eq. 6.19 and 6.21)[Magnusson 2009]
-  computeAngleDerivatives(p);
   const Eigen::Matrix<double, 8, 4> j_ang = computeAngularGradient(p.tail(3));
   const Eigen::Matrix<double, 16, 4> h_ang = computeAngularHessian(p.tail(3));
 
@@ -977,6 +975,8 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeStepLengt
   // Hessian is unnecessary for step length determination but gradients are required
   // so derivative and transform data is stored for the next iteration.
   if (step_iterations) {
+    // Precompute Angular Derivatives (eq. 6.19 and 6.21)[Magnusson 2009]
+    computeAngleDerivatives(x_t);
     hessian = computeHessian(trans_cloud);
   }
 
