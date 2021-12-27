@@ -272,17 +272,13 @@ updateDerivatives(
   c_inv4.topLeftCorner(3, 3) = c_inv;
 
   // e^(-d_2/2 * (x_k - mu_k)^T Sigma_k^-1 (x_k - mu_k)) Equation 6.9 [Magnusson 2009]
-  double e_x_cov_x = exp(-gauss_d2_ * x_trans4.dot(x_trans4 * c_inv4) * 0.5f);
+  const double e_x_cov_x = exp(-gauss_d2_ * x_trans4.dot(x_trans4 * c_inv4) * 0.5f);
   // Calculate probability of transformed points existence, Equation 6.9 [Magnusson 2009]
-  double score_inc = -gauss_d1_ * e_x_cov_x;
-
-  e_x_cov_x = gauss_d2_ * e_x_cov_x;
-  // Reusable portion of Equation 6.12 and 6.13 [Magnusson 2009]
-  e_x_cov_x *= gauss_d1_;
+  const double score_inc = -gauss_d1_ * e_x_cov_x;
 
   const Eigen::Matrix<double, 6, 1> g = x_trans4 * c_inv4 * point_gradient4;
 
-  const Vector6d score_gradient = e_x_cov_x * g;
+  const Vector6d score_gradient = gauss_d1_ * gauss_d2_ * e_x_cov_x * g;
 
   if (!compute_hessian) {
     return {score_gradient, Matrix6d::Zero(), score_inc};
@@ -299,7 +295,7 @@ updateDerivatives(
 
     for (int j = 0; j < hessian.cols(); j++) {
       // Update hessian, Equation 6.13 [Magnusson 2009]
-      hessian(i, j) += e_x_cov_x * (-gauss_d2_ * g(i) * g(j) + h(j) + m(j, i));
+      hessian(i, j) += gauss_d1_ * gauss_d2_ * e_x_cov_x * (-gauss_d2_ * g(i) * g(j) + h(j) + m(j, i));
     }
   }
 
