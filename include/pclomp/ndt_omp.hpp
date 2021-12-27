@@ -302,7 +302,7 @@ protected:
 
   Eigen::Matrix<double, 6, 6> computeHessian(
       const Eigen::Matrix<double, 8, 3> & j_ang,
-      const Eigen::Matrix<double, 16, 3> & h_ang,
+      const Eigen::Matrix<double, 15, 3> & h_ang,
       const PointCloudSource & trans_cloud) const;
 
   /** \brief Compute individual point contributions to hessian of probability function w.r.t. the transformation vector.
