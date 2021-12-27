@@ -45,7 +45,7 @@
 using Vector6d = Eigen::Matrix<double, 6, 1>;
 using Matrix6d = Eigen::Matrix<double, 6, 6>;
 
-template <typename PointSource>
+template<typename PointSource>
 Eigen::Vector3d point_to_vector3d(const PointSource & p)
 {
   return Eigen::Vector3d(p.x, p.y, p.z);
@@ -322,14 +322,16 @@ Matrix6d computeScoreHessian(
   return hessian;
 }
 
-double round_cos(const double angle) {
+double round_cos(const double angle)
+{
   if (fabs(angle) < 10e-5) {
     return 1.0;
   }
   return cos(angle);
 }
 
-double round_sin(const double angle) {
+double round_sin(const double angle)
+{
   if (fabs(angle) < 10e-5) {
     return 0.0;
   }
@@ -442,8 +444,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
 
     const Eigen::Vector3d x = point_to_vector3d(input_->points[idx]);
     const Eigen::Vector3d x_trans_ref = point_to_vector3d(x_trans_pt);
-    for (const TargetGridLeafConstPtr cell : neighborhood)
-    {
+    for (const TargetGridLeafConstPtr cell : neighborhood) {
       // Denorm point, x_k' in Equations 6.12 and 6.13 [Magnusson 2009]
       const Eigen::Vector3d x_trans = x_trans_ref - cell->getMean();
       // Uses precomputed covariance for speed.
@@ -554,22 +555,22 @@ Eigen::Matrix<double, 3, 6> computePointGradient(
 }
 
 Eigen::Matrix<double, 18, 6> computePointHessian(
-    const Eigen::Vector3d & h_ang_a2_,
-    const Eigen::Vector3d & h_ang_a3_,
-    const Eigen::Vector3d & h_ang_b2_,
-    const Eigen::Vector3d & h_ang_b3_,
-    const Eigen::Vector3d & h_ang_c2_,
-    const Eigen::Vector3d & h_ang_c3_,
-    const Eigen::Vector3d & h_ang_d1_,
-    const Eigen::Vector3d & h_ang_d2_,
-    const Eigen::Vector3d & h_ang_d3_,
-    const Eigen::Vector3d & h_ang_e1_,
-    const Eigen::Vector3d & h_ang_e2_,
-    const Eigen::Vector3d & h_ang_e3_,
-    const Eigen::Vector3d & h_ang_f1_,
-    const Eigen::Vector3d & h_ang_f2_,
-    const Eigen::Vector3d & h_ang_f3_,
-    const Eigen::Vector3d & x)
+  const Eigen::Vector3d & h_ang_a2_,
+  const Eigen::Vector3d & h_ang_a3_,
+  const Eigen::Vector3d & h_ang_b2_,
+  const Eigen::Vector3d & h_ang_b3_,
+  const Eigen::Vector3d & h_ang_c2_,
+  const Eigen::Vector3d & h_ang_c3_,
+  const Eigen::Vector3d & h_ang_d1_,
+  const Eigen::Vector3d & h_ang_d2_,
+  const Eigen::Vector3d & h_ang_d3_,
+  const Eigen::Vector3d & h_ang_e1_,
+  const Eigen::Vector3d & h_ang_e2_,
+  const Eigen::Vector3d & h_ang_e3_,
+  const Eigen::Vector3d & h_ang_f1_,
+  const Eigen::Vector3d & h_ang_f2_,
+  const Eigen::Vector3d & h_ang_f3_,
+  const Eigen::Vector3d & x)
 {
   // Vectors from Equation 6.21 [Magnusson 2009]
   const Eigen::Vector3d a(0, x.dot(h_ang_a2_), x.dot(h_ang_a3_));
@@ -648,9 +649,9 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeHessian(
       // Compute derivative of transform function w.r.t. transform vector,
       // J_E and H_E in Equations 6.18 and 6.20 [Magnusson 2009]
       point_gradient_ = computePointGradient(
-          j_ang_a_, j_ang_b_, j_ang_c_, j_ang_d_,
-          j_ang_e_, j_ang_f_, j_ang_g_, j_ang_h_,
-          x);
+        j_ang_a_, j_ang_b_, j_ang_c_, j_ang_d_,
+        j_ang_e_, j_ang_f_, j_ang_g_, j_ang_h_,
+        x);
 
       point_hessian_ = computePointHessian(
         h_ang_a2_, h_ang_a3_,
@@ -1011,8 +1012,7 @@ double pclomp::NormalDistributionsTransform<PointSource, PointTarget>::calculate
     }
 
     const Eigen::Vector3d x_trans_ref = point_to_vector3d(x_trans_pt);
-    for (const TargetGridLeafConstPtr cell : neighborhood)
-    {
+    for (const TargetGridLeafConstPtr cell : neighborhood) {
       // Denorm point, x_k' in Equations 6.12 and 6.13 [Magnusson 2009]
       const Eigen::Vector3d x_trans = x_trans_ref - cell->getMean();
       // Uses precomputed covariance for speed.
