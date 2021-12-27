@@ -371,16 +371,15 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
 
       // Compute derivative of transform function w.r.t. transform vector,
       // J_E and H_E in Equations 6.18 and 6.20 [Magnusson 2009]
-      Eigen::Matrix<double, 4, 6> gradient = computePointGradient(x, j_ang);
-      Eigen::Matrix<double, 24, 6> hessian = computePointHessian(x, h_ang);
+      const Eigen::Matrix<double, 4, 6> gradient = computePointGradient(x, j_ang);
+      const Eigen::Matrix<double, 24, 6> hessian = computePointHessian(x, h_ang);
       // Update score, gradient and hessian, lines 19-21 in Algorithm 2,
       // according to Equations 6.10, 6.12 and 6.13, respectively [Magnusson 2009]
-      const auto [score_gradient_inc, hessian_inc, score_inc] = updateDerivatives(
-        gradient, hessian,
-        x_trans, c_inv, gauss_d1_, gauss_d2_, compute_hessian);
-      score_gradient_pt += score_gradient_inc;
-      hessian_pt += hessian_inc;
-      score_pt += score_inc;
+      const auto [dg, dh, ds] = updateDerivatives(
+        gradient, hessian, x_trans, c_inv, gauss_d1_, gauss_d2_, compute_hessian);
+      score_gradient_pt += dg;
+      hessian_pt += dh;
+      score_pt += ds;
     }
 
     scores[idx] = score_pt;
