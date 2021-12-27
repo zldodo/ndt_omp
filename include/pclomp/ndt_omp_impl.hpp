@@ -613,13 +613,9 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::updateHessian(
         point_gradient_.col(j).dot(cov_dxd_pi) );
     }
   }
-
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<typename PointSource, typename PointTarget>
-bool
-pclomp::NormalDistributionsTransform<PointSource, PointTarget>::updateIntervalMT(
+bool updateIntervalMT(
   double & a_l, double & f_l, double & g_l,
   double & a_u, double & f_u, double & g_u,
   double a_t, double f_t, double g_t)
