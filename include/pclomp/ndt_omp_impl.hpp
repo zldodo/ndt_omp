@@ -61,11 +61,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::NormalDistributi
   gauss_d1_(),
   gauss_d2_(),
   gauss_d3_(),
-  trans_probability_(),
-  j_ang_a_(), j_ang_b_(), j_ang_c_(), j_ang_d_(), j_ang_e_(), j_ang_f_(), j_ang_g_(), j_ang_h_(),
-  h_ang_a2_(), h_ang_a3_(), h_ang_b2_(), h_ang_b3_(), h_ang_c2_(), h_ang_c3_(), h_ang_d1_(),
-  h_ang_d2_(),
-  h_ang_d3_(), h_ang_e1_(), h_ang_e2_(), h_ang_e3_(), h_ang_f1_(), h_ang_f2_(), h_ang_f3_()
+  trans_probability_()
 {
   reg_name_ = "NormalDistributionsTransform";
 
@@ -478,13 +474,8 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
   return {gradient, hessian, score};
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<typename PointSource, typename PointTarget>
-void
-pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeAngleDerivatives(
-  const Vector6d & p)
+Eigen::Matrix<double, 8, 3> computeAngularGradient_(const Vector6d & p)
 {
-  // Simplified math for near 0 angles
   const double cx = round_cos(p(3));
   const double sx = round_sin(p(3));
   const double cy = round_cos(p(4));
@@ -493,90 +484,83 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeAngleDeri
   const double sz = round_sin(p(5));
 
   // Precomputed angular gradiant components. Letters correspond to Equation 6.19 [Magnusson 2009]
-  j_ang_a_ << -sx * sz + cx * sy * cz, -sx * cz - cx * sy * sz, -cx * cy;
-  j_ang_b_ << cx * sz + sx * sy * cz, cx * cz - sx * sy * sz, -sx * cy;
-  j_ang_c_ << -sy * cz, sy * sz, cy;
-  j_ang_d_ << sx * cy * cz, -sx * cy * sz, sx * sy;
-  j_ang_e_ << -cx * cy * cz, cx * cy * sz, -cx * sy;
-  j_ang_f_ << -cy * sz, -cy * cz, 0;
-  j_ang_g_ << cx * cz - sx * sy * sz, -cx * sz - sx * sy * cz, 0;
-  j_ang_h_ << sx * cz + cx * sy * sz, cx * sy * cz - sx * sz, 0;
+  Eigen::Matrix<double, 8, 3> j_ang;
+  j_ang.row(0) << -sx * sz + cx * sy * cz, -sx * cz - cx * sy * sz, -cx * cy;
+  j_ang.row(1) << cx * sz + sx * sy * cz, cx * cz - sx * sy * sz, -sx * cy;
+  j_ang.row(2) << -sy * cz, sy * sz, cy;
+  j_ang.row(3) << sx * cy * cz, -sx * cy * sz, sx * sy;
+  j_ang.row(4) << -cx * cy * cz, cx * cy * sz, -cx * sy;
+  j_ang.row(5) << -cy * sz, -cy * cz, 0;
+  j_ang.row(6) << cx * cz - sx * sy * sz, -cx * sz - sx * sy * cz, 0;
+  j_ang.row(7) << sx * cz + cx * sy * sz, cx * sy * cz - sx * sz, 0;
+  return j_ang;
+}
+
+Eigen::Matrix<double, 16, 3> computeAngularHessian_(const Vector6d & p)
+{
+  const double cx = round_cos(p(3));
+  const double sx = round_sin(p(3));
+  const double cy = round_cos(p(4));
+  const double sy = round_sin(p(4));
+  const double cz = round_cos(p(5));
+  const double sz = round_sin(p(5));
 
   // Precomputed angular hessian components.
   // Letters correspond to Equation 6.21 and numbers correspond to row index [Magnusson 2009]
-  h_ang_a2_ << -cx * sz - sx * sy * cz, -cx * cz + sx * sy * sz, sx * cy;
-  h_ang_a3_ << -sx * sz + cx * sy * cz, -cx * sy * sz - sx * cz, -cx * cy;
+  Eigen::Matrix<double, 16, 3> h_ang;
+  h_ang.row(0) << -cx * sz - sx * sy * cz, -cx * cz + sx * sy * sz, sx * cy;
+  h_ang.row(1) << -sx * sz + cx * sy * cz, -cx * sy * sz - sx * cz, -cx * cy;
 
-  h_ang_b2_ << cx * cy * cz, -cx * cy * sz, cx * sy;
-  h_ang_b3_ << sx * cy * cz, -sx * cy * sz, sx * sy;
+  h_ang.row(2) << cx * cy * cz, -cx * cy * sz, cx * sy;
+  h_ang.row(3) << sx * cy * cz, -sx * cy * sz, sx * sy;
 
-  h_ang_c2_ << -sx * cz - cx * sy * sz, sx * sz - cx * sy * cz, 0;
-  h_ang_c3_ << cx * cz - sx * sy * sz, -sx * sy * cz - cx * sz, 0;
+  h_ang.row(4) << -sx * cz - cx * sy * sz, sx * sz - cx * sy * cz, 0;
+  h_ang.row(5) << cx * cz - sx * sy * sz, -sx * sy * cz - cx * sz, 0;
 
-  h_ang_d1_ << -cy * cz, cy * sz, sy;
-  h_ang_d2_ << -sx * sy * cz, sx * sy * sz, sx * cy;
-  h_ang_d3_ << cx * sy * cz, -cx * sy * sz, -cx * cy;
+  h_ang.row(6) << -cy * cz, cy * sz, sy;
+  h_ang.row(7) << -sx * sy * cz, sx * sy * sz, sx * cy;
+  h_ang.row(8) << cx * sy * cz, -cx * sy * sz, -cx * cy;
 
-  h_ang_e1_ << sy * sz, sy * cz, 0;
-  h_ang_e2_ << -sx * cy * sz, -sx * cy * cz, 0;
-  h_ang_e3_ << cx * cy * sz, cx * cy * cz, 0;
+  h_ang.row(9) << sy * sz, sy * cz, 0;
+  h_ang.row(10) << -sx * cy * sz, -sx * cy * cz, 0;
+  h_ang.row(11) << cx * cy * sz, cx * cy * cz, 0;
 
-  h_ang_f1_ << -cy * cz, cy * sz, 0;
-  h_ang_f2_ << -cx * sz - sx * sy * cz, -cx * cz + sx * sy * sz, 0;
-  h_ang_f3_ << -sx * sz + cx * sy * cz, -cx * sy * sz - sx * cz, 0;
+  h_ang.row(12) << -cy * cz, cy * sz, 0;
+  h_ang.row(13) << -cx * sz - sx * sy * cz, -cx * cz + sx * sy * sz, 0;
+  h_ang.row(14) << -sx * sz + cx * sy * cz, -cx * sy * sz - sx * cz, 0;
+  return h_ang;
 }
 
 Eigen::Matrix<double, 3, 6> computePointGradient(
-  const Eigen::Vector3d & j_ang_a_,
-  const Eigen::Vector3d & j_ang_b_,
-  const Eigen::Vector3d & j_ang_c_,
-  const Eigen::Vector3d & j_ang_d_,
-  const Eigen::Vector3d & j_ang_e_,
-  const Eigen::Vector3d & j_ang_f_,
-  const Eigen::Vector3d & j_ang_g_,
-  const Eigen::Vector3d & j_ang_h_,
+  const Eigen::Matrix<double, 8, 3> & j_ang,
   const Eigen::Vector3d & x)
 {
   Eigen::Matrix<double, 3, 6> point_gradient_ = Eigen::Matrix<double, 3, 6>::Zero();
   // Calculate first derivative of Transformation Equation 6.17 w.r.t. transform vector p.
   // Derivative w.r.t. ith element of transform vector corresponds to column i,
   // Equation 6.18 and 6.19 [Magnusson 2009]
-  point_gradient_(1, 3) = x.dot(j_ang_a_);
-  point_gradient_(2, 3) = x.dot(j_ang_b_);
-  point_gradient_(0, 4) = x.dot(j_ang_c_);
-  point_gradient_(1, 4) = x.dot(j_ang_d_);
-  point_gradient_(2, 4) = x.dot(j_ang_e_);
-  point_gradient_(0, 5) = x.dot(j_ang_f_);
-  point_gradient_(1, 5) = x.dot(j_ang_g_);
-  point_gradient_(2, 5) = x.dot(j_ang_h_);
+  point_gradient_(1, 3) = x.dot(j_ang.row(0));
+  point_gradient_(2, 3) = x.dot(j_ang.row(1));
+  point_gradient_(0, 4) = x.dot(j_ang.row(2));
+  point_gradient_(1, 4) = x.dot(j_ang.row(3));
+  point_gradient_(2, 4) = x.dot(j_ang.row(4));
+  point_gradient_(0, 5) = x.dot(j_ang.row(5));
+  point_gradient_(1, 5) = x.dot(j_ang.row(6));
+  point_gradient_(2, 5) = x.dot(j_ang.row(7));
   return point_gradient_;
 }
 
 Eigen::Matrix<double, 18, 6> computePointHessian(
-  const Eigen::Vector3d & h_ang_a2_,
-  const Eigen::Vector3d & h_ang_a3_,
-  const Eigen::Vector3d & h_ang_b2_,
-  const Eigen::Vector3d & h_ang_b3_,
-  const Eigen::Vector3d & h_ang_c2_,
-  const Eigen::Vector3d & h_ang_c3_,
-  const Eigen::Vector3d & h_ang_d1_,
-  const Eigen::Vector3d & h_ang_d2_,
-  const Eigen::Vector3d & h_ang_d3_,
-  const Eigen::Vector3d & h_ang_e1_,
-  const Eigen::Vector3d & h_ang_e2_,
-  const Eigen::Vector3d & h_ang_e3_,
-  const Eigen::Vector3d & h_ang_f1_,
-  const Eigen::Vector3d & h_ang_f2_,
-  const Eigen::Vector3d & h_ang_f3_,
+  const Eigen::Matrix<double, 16, 3> & h_ang,
   const Eigen::Vector3d & x)
 {
   // Vectors from Equation 6.21 [Magnusson 2009]
-  const Eigen::Vector3d a(0, x.dot(h_ang_a2_), x.dot(h_ang_a3_));
-  const Eigen::Vector3d b(0, x.dot(h_ang_b2_), x.dot(h_ang_b3_));
-  const Eigen::Vector3d c(0, x.dot(h_ang_c2_), x.dot(h_ang_c3_));
-  const Eigen::Vector3d d(x.dot(h_ang_d1_), x.dot(h_ang_d2_), x.dot(h_ang_d3_));
-  const Eigen::Vector3d e(x.dot(h_ang_e1_), x.dot(h_ang_e2_), x.dot(h_ang_e3_));
-  const Eigen::Vector3d f(x.dot(h_ang_f1_), x.dot(h_ang_f2_), x.dot(h_ang_f3_));
+  const Eigen::Vector3d a(0, x.dot(h_ang.row(0)), x.dot(h_ang.row(1)));
+  const Eigen::Vector3d b(0, x.dot(h_ang.row(2)), x.dot(h_ang.row(3)));
+  const Eigen::Vector3d c(0, x.dot(h_ang.row(4)), x.dot(h_ang.row(5)));
+  const Eigen::Vector3d d(x.dot(h_ang.row(6)), x.dot(h_ang.row(7)), x.dot(h_ang.row(8)));
+  const Eigen::Vector3d e(x.dot(h_ang.row(9)), x.dot(h_ang.row(10)), x.dot(h_ang.row(11)));
+  const Eigen::Vector3d f(x.dot(h_ang.row(12)), x.dot(h_ang.row(13)), x.dot(h_ang.row(14)));
 
   // Calculate second derivative of Transformation Equation 6.17 w.r.t. transform vector p.
   // Derivative w.r.t. ith and jth elements of transform vector corresponds to
@@ -597,6 +581,8 @@ Eigen::Matrix<double, 18, 6> computePointHessian(
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<typename PointSource, typename PointTarget>
 Matrix6d pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeHessian(
+  const Eigen::Matrix<double, 8, 3> & j_ang,
+  const Eigen::Matrix<double, 16, 3> & h_ang,
   const PointCloudSource & trans_cloud) const
 {
   // Initialize Point Gradient and Hessian
@@ -644,18 +630,9 @@ Matrix6d pclomp::NormalDistributionsTransform<PointSource, PointTarget>::compute
 
       // Compute derivative of transform function w.r.t. transform vector,
       // J_E and H_E in Equations 6.18 and 6.20 [Magnusson 2009]
-      point_gradient_ = computePointGradient(
-        j_ang_a_, j_ang_b_, j_ang_c_, j_ang_d_,
-        j_ang_e_, j_ang_f_, j_ang_g_, j_ang_h_,
-        x);
+      point_gradient_ = computePointGradient(j_ang, x);
 
-      point_hessian_ = computePointHessian(
-        h_ang_a2_, h_ang_a3_,
-        h_ang_b2_, h_ang_b3_,
-        h_ang_c2_, h_ang_c3_,
-        h_ang_d1_, h_ang_d2_, h_ang_d3_,
-        h_ang_e1_, h_ang_e2_, h_ang_e3_,
-        h_ang_f1_, h_ang_f2_, h_ang_f3_, x);
+      point_hessian_ = computePointHessian(h_ang, x);
       // Update hessian, lines 21 in Algorithm 2,
       // according to Equations 6.10, 6.12 and 6.13, respectively [Magnusson 2009]
       updateHessian(hessian, point_gradient_, point_hessian_, x_trans, c_inv);
@@ -976,8 +953,9 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeStepLengt
   // so derivative and transform data is stored for the next iteration.
   if (step_iterations) {
     // Precompute Angular Derivatives (eq. 6.19 and 6.21)[Magnusson 2009]
-    computeAngleDerivatives(x_t);
-    hessian = computeHessian(trans_cloud);
+    const Eigen::Matrix<double, 8, 3> j_ang = computeAngularGradient_(x_t);
+    const Eigen::Matrix<double, 16, 3> h_ang = computeAngularHessian_(x_t);
+    hessian = computeHessian(j_ang, h_ang, trans_cloud);
   }
 
   return a_t;
