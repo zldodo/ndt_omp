@@ -203,19 +203,19 @@ Eigen::Matrix<double, 4, 6> computePointGradient(
   // Calculate first derivative of Transformation Equation 6.17 w.r.t. transform vector p.
   // Derivative w.r.t. ith element of transform vector corresponds to column i,
   // Equation 6.18 and 6.19 [Magnusson 2009]
-  Eigen::Matrix<double, 8, 1> x_j_ang = j_ang * x;
+  Eigen::Matrix<double, 8, 1> y = j_ang * x;
 
   Eigen::Matrix<double, 4, 6> gradient = Eigen::Matrix<double, 4, 6>::Zero();
   gradient.block<3, 3>(0, 0) = Eigen::Matrix<double, 3, 3>::Identity();
 
-  gradient(1, 3) = x_j_ang(0);
-  gradient(2, 3) = x_j_ang(1);
-  gradient(0, 4) = x_j_ang(2);
-  gradient(1, 4) = x_j_ang(3);
-  gradient(2, 4) = x_j_ang(4);
-  gradient(0, 5) = x_j_ang(5);
-  gradient(1, 5) = x_j_ang(6);
-  gradient(2, 5) = x_j_ang(7);
+  gradient(1, 3) = y(0);
+  gradient(2, 3) = y(1);
+  gradient(0, 4) = y(2);
+  gradient(1, 4) = y(3);
+  gradient(2, 4) = y(4);
+  gradient(0, 5) = y(5);
+  gradient(1, 5) = y(6);
+  gradient(2, 5) = y(7);
 
   return gradient;
 }
@@ -224,15 +224,15 @@ Eigen::Matrix<double, 24, 6> computePointHessian(
   const Eigen::Vector3d & x,
   const Eigen::Matrix<double, 15, 3> & h_ang)
 {
-  Eigen::Matrix<double, 15, 1> x_h_ang = h_ang * x;
+  Eigen::Matrix<double, 15, 1> y = h_ang * x;
 
   // Vectors from Equation 6.21 [Magnusson 2009]
-  Eigen::Vector4d a(0, x_h_ang(0), x_h_ang(1), 0.0f);
-  Eigen::Vector4d b(0, x_h_ang(2), x_h_ang(3), 0.0f);
-  Eigen::Vector4d c(0, x_h_ang(4), x_h_ang(5), 0.0f);
-  Eigen::Vector4d d(x_h_ang(6), x_h_ang(7), x_h_ang(8), 0.0f);
-  Eigen::Vector4d e(x_h_ang(9), x_h_ang(10), x_h_ang(11), 0.0f);
-  Eigen::Vector4d f(x_h_ang(12), x_h_ang(13), x_h_ang(14), 0.0f);
+  Eigen::Vector4d a(0, y(0), y(1), 0.0f);
+  Eigen::Vector4d b(0, y(2), y(3), 0.0f);
+  Eigen::Vector4d c(0, y(4), y(5), 0.0f);
+  Eigen::Vector4d d(y(6), y(7), y(8), 0.0f);
+  Eigen::Vector4d e(y(9), y(10), y(11), 0.0f);
+  Eigen::Vector4d f(y(12), y(13), y(14), 0.0f);
 
   Eigen::Matrix<double, 24, 6> hessian = Eigen::Matrix<double, 24, 6>::Zero();
   // Calculate second derivative of Transformation Equation 6.17 w.r.t. transform vector p.
