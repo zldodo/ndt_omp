@@ -283,9 +283,9 @@ protected:
   computeDerivatives(
     Eigen::Matrix<double, 6, 1> & score_gradient,
     Eigen::Matrix<double, 6, 6> & hessian,
-    PointCloudSource & trans_cloud,
-    Eigen::Matrix<double, 6, 1> & p,
-    bool compute_hessian = true);
+    const PointCloudSource & trans_cloud,
+    const Eigen::Matrix<double, 6, 1> & p,
+    const bool compute_hessian = true);
 
   /** \brief Precompute angular components of derivatives.
    * \note Equation 6.19 and 6.21 [Magnusson 2009].
@@ -293,7 +293,7 @@ protected:
    * \param[in] compute_hessian flag to calculate hessian, unnecessary for step calculation.
    */
   void
-  computeAngleDerivatives(Eigen::Matrix<double, 6, 1> & p);
+  computeAngleDerivatives(const Eigen::Matrix<double, 6, 1> & p);
 
   /** \brief Compute hessian of probability function w.r.t. the transformation vector.
    * \note Equation 6.13 [Magnusson 2009].

@@ -313,9 +313,9 @@ double
 pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivatives(
   Vector6d & score_gradient,
   Matrix6d & hessian,
-  PointCloudSource & trans_cloud,
-  Vector6d & p,
-  bool compute_hessian)
+  const PointCloudSource & trans_cloud,
+  const Vector6d & p,
+  const bool compute_hessian)
 {
   std::vector<double> scores(input_->points.size());
   std::vector<Vector6d, Eigen::aligned_allocator<Vector6d>> score_gradients(input_->points.size());
@@ -422,7 +422,7 @@ double round_sin(const double angle) {
 template<typename PointSource, typename PointTarget>
 void
 pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeAngleDerivatives(
-  Vector6d & p)
+  const Vector6d & p)
 {
   // Simplified math for near 0 angles
   const double cx = round_cos(p(3));
