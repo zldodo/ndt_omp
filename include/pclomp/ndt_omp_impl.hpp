@@ -258,14 +258,23 @@ Eigen::Matrix<double, 24, 6> computePointHessian(
   return hessian;
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::tuple<Vector6d, Matrix6d, double>
-updateDerivatives(
-  const Eigen::Matrix<double, 4, 6> & point_gradient4,
-  const Eigen::Matrix<double, 24, 6> & point_hessian_,
+double computeScoreIncrement(
   const Eigen::Vector3d & x_trans, const Eigen::Matrix3d & c_inv,
-  const double d1, const double d2,
-  bool compute_hessian = true)
+  const double d1, const double d2)
+{
+  Eigen::Matrix<double, 1, 4> x_trans4(x_trans[0], x_trans[1], x_trans[2], 0.0f);
+  Eigen::Matrix4d c_inv4 = Eigen::Matrix4d::Zero();
+  c_inv4.topLeftCorner(3, 3) = c_inv;
+  // e^(-d_2/2 * (x_k - mu_k)^T Sigma_k^-1 (x_k - mu_k)) Equation 6.9 [Magnusson 2009]
+  const double e_x_cov_x = exp(-d2 * x_trans4.dot(x_trans4 * c_inv4) * 0.5f);
+  // Calculate probability of transformed points existence, Equation 6.9 [Magnusson 2009]
+  return -d1 * e_x_cov_x;
+}
+
+Vector6d computeScoreGradient(
+  const Eigen::Matrix<double, 4, 6> & point_gradient4,
+  const Eigen::Vector3d & x_trans, const Eigen::Matrix3d & c_inv,
+  const double d1, const double d2)
 {
   Eigen::Matrix<double, 1, 4> x_trans4(x_trans[0], x_trans[1], x_trans[2], 0.0f);
   Eigen::Matrix4d c_inv4 = Eigen::Matrix4d::Zero();
@@ -278,12 +287,23 @@ updateDerivatives(
 
   const Eigen::Matrix<double, 6, 1> g = x_trans4 * c_inv4 * point_gradient4;
 
-  const Vector6d score_gradient = d1 * d2 * e_x_cov_x * g;
+  return d1 * d2 * e_x_cov_x * g;
+}
 
-  if (!compute_hessian) {
-    return {score_gradient, Matrix6d::Zero(), score_inc};
-  }
+Matrix6d computeScoreHessian(
+  const Eigen::Matrix<double, 4, 6> & point_gradient4,
+  const Eigen::Matrix<double, 24, 6> & point_hessian_,
+  const Eigen::Vector3d & x_trans, const Eigen::Matrix3d & c_inv,
+  const double d1, const double d2)
+{
+  Eigen::Matrix<double, 1, 4> x_trans4(x_trans[0], x_trans[1], x_trans[2], 0.0f);
+  Eigen::Matrix4d c_inv4 = Eigen::Matrix4d::Zero();
+  c_inv4.topLeftCorner(3, 3) = c_inv;
 
+  // e^(-d_2/2 * (x_k - mu_k)^T Sigma_k^-1 (x_k - mu_k)) Equation 6.9 [Magnusson 2009]
+  const double e_x_cov_x = exp(-d2 * x_trans4.dot(x_trans4 * c_inv4) * 0.5f);
+
+  const Eigen::Matrix<double, 6, 1> g = x_trans4 * c_inv4 * point_gradient4;
   const Eigen::Matrix<double, 1, 4> xc = x_trans4 * c_inv4;
   const Eigen::Matrix<double, 6, 6> m = point_gradient4.transpose() * c_inv4 * point_gradient4;
 
@@ -299,10 +319,9 @@ updateDerivatives(
     }
   }
 
-  return {score_gradient, hessian, score_inc};
+  return hessian;
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<typename PointSource, typename PointTarget>
 std::tuple<Vector6d, Matrix6d, double>
 pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivatives(
@@ -365,11 +384,9 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
       const Eigen::Matrix<double, 24, 6> hessian = computePointHessian(x, h_ang);
       // Update score, gradient and hessian, lines 19-21 in Algorithm 2,
       // according to Equations 6.10, 6.12 and 6.13, respectively [Magnusson 2009]
-      const auto [dg, dh, ds] = updateDerivatives(
-        gradient, hessian, x_trans, c_inv, gauss_d1_, gauss_d2_, compute_hessian);
-      score_gradient_pt += dg;
-      hessian_pt += dh;
-      score_pt += ds;
+      score_gradient_pt += computeScoreGradient(gradient, x_trans, c_inv, gauss_d1_, gauss_d2_);
+      hessian_pt += computeScoreHessian(gradient, hessian, x_trans, c_inv, gauss_d1_, gauss_d2_);
+      score_pt += computeScoreIncrement(x_trans, c_inv, gauss_d1_, gauss_d2_);
     }
 
     scores[idx] = score_pt;
