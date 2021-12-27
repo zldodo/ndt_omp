@@ -198,14 +198,12 @@ int omp_get_thread_num() {return 0;}
 
 Eigen::Matrix<double, 4, 6> computePointGradient(
   const Eigen::Vector3d & x,
-  const Eigen::Matrix<double, 8, 4> & j_ang)
+  const Eigen::Matrix<double, 8, 3> & j_ang)
 {
-  Eigen::Vector4d x4(x(0), x(1), x(2), 0.0f);
-
   // Calculate first derivative of Transformation Equation 6.17 w.r.t. transform vector p.
   // Derivative w.r.t. ith element of transform vector corresponds to column i,
   // Equation 6.18 and 6.19 [Magnusson 2009]
-  Eigen::Matrix<double, 8, 1> x_j_ang = j_ang * x4;
+  Eigen::Matrix<double, 8, 1> x_j_ang = j_ang * x;
 
   Eigen::Matrix<double, 4, 6> gradient = Eigen::Matrix<double, 4, 6>::Zero();
   gradient.block<3, 3>(0, 0) = Eigen::Matrix<double, 3, 3>::Identity();
@@ -332,7 +330,7 @@ double round_sin(const double angle)
   return sin(angle);
 }
 
-Eigen::Matrix<double, 8, 4> computeAngularGradient(const Eigen::Vector3d & angles)
+Eigen::Matrix<double, 8, 3> computeAngularGradient(const Eigen::Vector3d & angles)
 {
   const double cx = round_cos(angles(0));
   const double sx = round_sin(angles(0));
@@ -341,15 +339,15 @@ Eigen::Matrix<double, 8, 4> computeAngularGradient(const Eigen::Vector3d & angle
   const double cz = round_cos(angles(2));
   const double sz = round_sin(angles(2));
 
-  Eigen::Matrix<double, 8, 4> j_ang;
-  j_ang.row(0) << -sx * sz + cx * sy * cz, -sx * cz - cx * sy * sz, -cx * cy, 0.0f;
-  j_ang.row(1) << cx * sz + sx * sy * cz, cx * cz - sx * sy * sz, -sx * cy, 0.0f;
-  j_ang.row(2) << -sy * cz, sy * sz, cy, 0.0f;
-  j_ang.row(3) << sx * cy * cz, -sx * cy * sz, sx * sy, 0.0f;
-  j_ang.row(4) << -cx * cy * cz, cx * cy * sz, -cx * sy, 0.0f;
-  j_ang.row(5) << -cy * sz, -cy * cz, 0, 0.0f;
-  j_ang.row(6) << cx * cz - sx * sy * sz, -cx * sz - sx * sy * cz, 0, 0.0f;
-  j_ang.row(7) << sx * cz + cx * sy * sz, cx * sy * cz - sx * sz, 0, 0.0f;
+  Eigen::Matrix<double, 8, 3> j_ang;
+  j_ang.row(0) << -sx * sz + cx * sy * cz, -sx * cz - cx * sy * sz, -cx * cy;
+  j_ang.row(1) << cx * sz + sx * sy * cz, cx * cz - sx * sy * sz, -sx * cy;
+  j_ang.row(2) << -sy * cz, sy * sz, cy;
+  j_ang.row(3) << sx * cy * cz, -sx * cy * sz, sx * sy;
+  j_ang.row(4) << -cx * cy * cz, cx * cy * sz, -cx * sy;
+  j_ang.row(5) << -cy * sz, -cy * cz, 0;
+  j_ang.row(6) << cx * cz - sx * sy * sz, -cx * sz - sx * sy * cz, 0;
+  j_ang.row(7) << sx * cz + cx * sy * sz, cx * sy * cz - sx * sz, 0;
   return j_ang;
 }
 
@@ -398,7 +396,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
   std::vector<Vector6d, Eigen::aligned_allocator<Vector6d>> gradients(input_->points.size());
   std::vector<Matrix6d, Eigen::aligned_allocator<Matrix6d>> hessians(input_->points.size());
 
-  const Eigen::Matrix<double, 8, 4> j_ang = computeAngularGradient(p.tail(3));
+  const Eigen::Matrix<double, 8, 3> j_ang = computeAngularGradient(p.tail(3));
   const Eigen::Matrix<double, 15, 3> h_ang = computeAngularHessian(p.tail(3));
 
   // Update gradient and hessian for each point, line 17 in Algorithm 2 [Magnusson 2009]
