@@ -277,12 +277,6 @@ updateDerivatives(
   double score_inc = -gauss_d1_ * e_x_cov_x;
 
   e_x_cov_x = gauss_d2_ * e_x_cov_x;
-
-  // Error checking for invalid values.
-  if (e_x_cov_x > 1 || e_x_cov_x < 0 || e_x_cov_x != e_x_cov_x) {
-    return {Vector6d::Zero(), Matrix6d::Zero(), 0};
-  }
-
   // Reusable portion of Equation 6.12 and 6.13 [Magnusson 2009]
   e_x_cov_x *= gauss_d1_;
 
