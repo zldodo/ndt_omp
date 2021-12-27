@@ -322,15 +322,8 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
   double score = 0;
 
   std::vector<double> scores(input_->points.size());
-  std::vector<Vector6d,
-    Eigen::aligned_allocator<Vector6d>> score_gradients(input_->points.size());
-  std::vector<Matrix6d,
-    Eigen::aligned_allocator<Matrix6d>> hessians(input_->points.size());
-  for (std::size_t i = 0; i < input_->points.size(); i++) {
-    scores[i] = 0;
-    score_gradients[i].setZero();
-    hessians[i].setZero();
-  }
+  std::vector<Vector6d, Eigen::aligned_allocator<Vector6d>> score_gradients(input_->points.size());
+  std::vector<Matrix6d, Eigen::aligned_allocator<Matrix6d>> hessians(input_->points.size());
 
   // Precompute Angular Derivatives (eq. 6.19 and 6.21)[Magnusson 2009]
   computeAngleDerivatives(p);
