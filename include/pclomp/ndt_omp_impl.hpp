@@ -598,14 +598,12 @@ Eigen::Matrix<double, 18, 6> computePointHessian(
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<typename PointSource, typename PointTarget>
-void
-pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeHessian(
-  Matrix6d & hessian,
-  PointCloudSource & trans_cloud, Vector6d &)
+Matrix6d pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeHessian(
+  const PointCloudSource & trans_cloud) const
 {
   // Initialize Point Gradient and Hessian
 
-  hessian.setZero();
+  Matrix6d hessian = Matrix6d::Zero();
 
   // Precompute Angular Derivatives unnecessary because only used after regular derivative calculation
 
@@ -665,6 +663,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeHessian(
       updateHessian(hessian, point_gradient_, point_hessian_, x_trans, c_inv);
     }
   }
+  return hessian;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -978,7 +977,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeStepLengt
   // Hessian is unnecessary for step length determination but gradients are required
   // so derivative and transform data is stored for the next iteration.
   if (step_iterations) {
-    computeHessian(hessian, trans_cloud, x_t);
+    hessian = computeHessian(trans_cloud);
   }
 
   return a_t;

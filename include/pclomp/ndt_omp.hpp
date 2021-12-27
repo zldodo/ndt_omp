@@ -299,11 +299,7 @@ protected:
    * \param[in] trans_cloud transformed point cloud
    * \param[in] p the current transform vector
    */
-  void
-  computeHessian(
-    Eigen::Matrix<double, 6, 6> & hessian,
-    PointCloudSource & trans_cloud,
-    Eigen::Matrix<double, 6, 1> & p);
+  Eigen::Matrix<double, 6, 6> computeHessian(const PointCloudSource & trans_cloud) const;
 
   /** \brief Compute individual point contributions to hessian of probability function w.r.t. the transformation vector.
    * \note Equation 6.13 [Magnusson 2009].
