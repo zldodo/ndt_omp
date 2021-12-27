@@ -330,7 +330,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
   const bool compute_hessian)
 {
   std::vector<double> scores(input_->points.size());
-  std::vector<Vector6d, Eigen::aligned_allocator<Vector6d>> score_gradients(input_->points.size());
+  std::vector<Vector6d, Eigen::aligned_allocator<Vector6d>> gradients(input_->points.size());
   std::vector<Matrix6d, Eigen::aligned_allocator<Matrix6d>> hessians(input_->points.size());
 
   // Precompute Angular Derivatives (eq. 6.19 and 6.21)[Magnusson 2009]
@@ -365,9 +365,9 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
 
     // Initialize Point Gradient and Hessian
 
-    double score_pt = 0;
-    Vector6d score_gradient_pt = Vector6d::Zero();
-    Matrix6d hessian_pt = Matrix6d::Zero();
+    double s = 0;
+    Vector6d g = Vector6d::Zero();
+    Matrix6d h = Matrix6d::Zero();
 
     const Eigen::Vector3d x = point_to_vector3d(input_->points[idx]);
     const Eigen::Vector3d x_trans_ref = point_to_vector3d(x_trans_pt);
@@ -380,32 +380,32 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
 
       // Compute derivative of transform function w.r.t. transform vector,
       // J_E and H_E in Equations 6.18 and 6.20 [Magnusson 2009]
-      const Eigen::Matrix<double, 4, 6> gradient = computePointGradient(x, j_ang);
-      const Eigen::Matrix<double, 24, 6> hessian = computePointHessian(x, h_ang);
+      const Eigen::Matrix<double, 4, 6> pg = computePointGradient(x, j_ang);
+      const Eigen::Matrix<double, 24, 6> ph = computePointHessian(x, h_ang);
       // Update score, gradient and hessian, lines 19-21 in Algorithm 2,
       // according to Equations 6.10, 6.12 and 6.13, respectively [Magnusson 2009]
-      score_gradient_pt += computeScoreGradient(gradient, x_trans, c_inv, gauss_d1_, gauss_d2_);
-      hessian_pt += computeScoreHessian(gradient, hessian, x_trans, c_inv, gauss_d1_, gauss_d2_);
-      score_pt += computeScoreIncrement(x_trans, c_inv, gauss_d1_, gauss_d2_);
+      s += computeScoreIncrement(x_trans, c_inv, gauss_d1_, gauss_d2_);
+      g += computeScoreGradient(pg, x_trans, c_inv, gauss_d1_, gauss_d2_);
+      h += computeScoreHessian(pg, ph, x_trans, c_inv, gauss_d1_, gauss_d2_);
     }
 
-    scores[idx] = score_pt;
-    score_gradients[idx].noalias() = score_gradient_pt;
-    hessians[idx].noalias() = hessian_pt;
+    scores[idx] = s;
+    gradients[idx].noalias() = g;
+    hessians[idx].noalias() = h;
   }
 
-  Vector6d score_gradient = Vector6d::Zero();
+  Vector6d gradient = Vector6d::Zero();
   Matrix6d hessian = Matrix6d::Zero();
   double score = 0;
 
   // Ensure that the result is invariant against the summing up order
   for (std::size_t i = 0; i < input_->points.size(); i++) {
     score += scores[i];
-    score_gradient += score_gradients[i];
+    gradient += gradients[i];
     hessian += hessians[i];
   }
 
-  return {score_gradient, hessian, score};
+  return {gradient, hessian, score};
 }
 
 double round_cos(const double angle) {
