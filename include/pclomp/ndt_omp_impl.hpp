@@ -317,10 +317,6 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
   Vector6d & p,
   bool compute_hessian)
 {
-  score_gradient.setZero();
-  hessian.setZero();
-  double score = 0;
-
   std::vector<double> scores(input_->points.size());
   std::vector<Vector6d, Eigen::aligned_allocator<Vector6d>> score_gradients(input_->points.size());
   std::vector<Matrix6d, Eigen::aligned_allocator<Matrix6d>> hessians(input_->points.size());
@@ -393,6 +389,10 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
     score_gradients[idx].noalias() = score_gradient_pt;
     hessians[idx].noalias() = hessian_pt;
   }
+
+  score_gradient.setZero();
+  hessian.setZero();
+  double score = 0;
 
   // Ensure that the result is invariant against the summing up order
   for (std::size_t i = 0; i < input_->points.size(); i++) {
