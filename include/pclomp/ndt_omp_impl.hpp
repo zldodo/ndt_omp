@@ -327,13 +327,6 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
   for (std::size_t idx = 0; idx < input_->points.size(); idx++) {
     int thread_n = omp_get_thread_num();
 
-    // Initialize Point Gradient and Hessian
-    Eigen::Matrix<double, 4, 6> point_gradient_;
-    Eigen::Matrix<double, 24, 6> point_hessian_;
-    point_gradient_.setZero();
-    point_gradient_.block<3, 3>(0, 0).setIdentity();
-    point_hessian_.setZero();
-
     PointSource x_trans_pt = trans_cloud.points[idx];
 
     std::vector<TargetGridLeafConstPtr> neighborhood;
@@ -356,6 +349,13 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
         break;
     }
 
+    // Initialize Point Gradient and Hessian
+    Eigen::Matrix<double, 4, 6> point_gradient;
+    Eigen::Matrix<double, 24, 6> point_hessian;
+    point_gradient.setZero();
+    point_gradient.block<3, 3>(0, 0).setIdentity();
+    point_hessian.setZero();
+
     double score_pt = 0;
     Vector6d score_gradient_pt = Vector6d::Zero();
     Matrix6d hessian_pt = Matrix6d::Zero();
@@ -371,12 +371,12 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
 
       // Compute derivative of transform function w.r.t. transform vector,
       // J_E and H_E in Equations 6.18 and 6.20 [Magnusson 2009]
-      computePointGradient(x, j_ang, point_gradient_);
-      computePointHessian(x, h_ang, point_hessian_);
+      computePointGradient(x, j_ang, point_gradient);
+      computePointHessian(x, h_ang, point_hessian);
       // Update score, gradient and hessian, lines 19-21 in Algorithm 2,
       // according to Equations 6.10, 6.12 and 6.13, respectively [Magnusson 2009]
       const auto [score_gradient_inc, hessian_inc, score_inc] = updateDerivatives(
-        point_gradient_, point_hessian_,
+        point_gradient, point_hessian,
         x_trans, c_inv, gauss_d1_, gauss_d2_, compute_hessian);
       score_gradient_pt += score_gradient_inc;
       hessian_pt += hessian_inc;
