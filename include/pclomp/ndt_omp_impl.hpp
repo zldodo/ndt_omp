@@ -669,7 +669,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::trialValueSelect
     }
   }
   // Case 2 in Trial Value Selection [More, Thuente 1994]
-  else if (g_t * g_l < 0) {
+  if (g_t * g_l < 0) {
     // Calculate the minimizer of the cubic that interpolates f_l, f_t, g_l and g_t
     // Equation 2.4.52 [Sun, Yuan 2006]
     double z = 3 * (f_t - f_l) / (a_t - a_l) - g_t - g_l;
@@ -688,7 +688,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::trialValueSelect
     }
   }
   // Case 3 in Trial Value Selection [More, Thuente 1994]
-  else if (std::fabs(g_t) <= std::fabs(g_l)) {
+  if (std::fabs(g_t) <= std::fabs(g_l)) {
     // Calculate the minimizer of the cubic that interpolates f_l, f_t, g_l and g_t
     // Equation 2.4.52 [Sun, Yuan 2006]
     double z = 3 * (f_t - f_l) / (a_t - a_l) - g_t - g_l;
@@ -714,14 +714,12 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::trialValueSelect
     }
   }
   // Case 4 in Trial Value Selection [More, Thuente 1994]
-  else {
-    // Calculate the minimizer of the cubic that interpolates f_u, f_t, g_u and g_t
-    // Equation 2.4.52 [Sun, Yuan 2006]
-    double z = 3 * (f_t - f_u) / (a_t - a_u) - g_t - g_u;
-    double w = std::sqrt(z * z - g_t * g_u);
-    // Equation 2.4.56 [Sun, Yuan 2006]
-    return a_u + (a_t - a_u) * (w - g_u - z) / (g_t - g_u + 2 * w);
-  }
+  // Calculate the minimizer of the cubic that interpolates f_u, f_t, g_u and g_t
+  // Equation 2.4.52 [Sun, Yuan 2006]
+  double z = 3 * (f_t - f_u) / (a_t - a_u) - g_t - g_u;
+  double w = std::sqrt(z * z - g_t * g_u);
+  // Equation 2.4.56 [Sun, Yuan 2006]
+  return a_u + (a_t - a_u) * (w - g_u - z) / (g_t - g_u + 2 * w);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
