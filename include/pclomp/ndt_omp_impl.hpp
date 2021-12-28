@@ -615,40 +615,30 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::updateHessian(
   }
 }
 
-bool updateIntervalMT(
-  double & a_l, double & f_l, double & g_l,
-  double & a_u, double & f_u, double & g_u,
+std::tuple<bool, std::pair<double, double>, std::pair<double, double>, std::pair<double, double>>
+updateIntervalMT(
+  const std::pair<double, double> & a,
+  const std::pair<double, double> & f,
+  const std::pair<double, double> & g,
   double a_t, double f_t, double g_t)
 {
+  const auto [a_l, a_u] = a;
+  const auto [f_l, f_u] = f;
+  const auto [g_l, g_u] = g;
   // Case U1 in Update Algorithm and Case a in Modified Update Algorithm [More, Thuente 1994]
   if (f_t > f_l) {
-    a_u = a_t;
-    f_u = f_t;
-    g_u = g_t;
-    return false;
+    return {false, std::make_pair(a_l, a_t), std::make_pair(f_l, f_t), std::make_pair(g_l, g_t)};
   }
   // Case U2 in Update Algorithm and Case b in Modified Update Algorithm [More, Thuente 1994]
-  else if (g_t * (a_l - a_t) > 0) {
-    a_l = a_t;
-    f_l = f_t;
-    g_l = g_t;
-    return false;
+  if (g_t * (a_l - a_t) > 0) {
+    return {false, std::make_pair(a_t, a_u), std::make_pair(f_t, f_u), std::make_pair(g_t, g_u)};
   }
   // Case U3 in Update Algorithm and Case c in Modified Update Algorithm [More, Thuente 1994]
-  else if (g_t * (a_l - a_t) < 0) {
-    a_u = a_l;
-    f_u = f_l;
-    g_u = g_l;
-
-    a_l = a_t;
-    f_l = f_t;
-    g_l = g_t;
-    return false;
+  if (g_t * (a_l - a_t) < 0) {
+    return {false, std::make_pair(a_t, a_l), std::make_pair(f_t, f_l), std::make_pair(g_t, g_l)};
   }
   // Interval Converged
-  else {
-    return true;
-  }
+  return {true, a, f, g};
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -867,16 +857,26 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeStepLengt
 
     if (open_interval) {
       // Update interval end points using Updating Algorithm [More, Thuente 1994]
-      interval_converged = updateIntervalMT(
-        a_l, f_l, g_l,
-        a_u, f_u, g_u,
+      const auto [converged, a, f, g] = updateIntervalMT(
+        std::make_pair(a_l, a_u),
+        std::make_pair(f_l, f_u),
+        std::make_pair(g_l, g_u),
         a_t, psi_t, d_psi_t);
+      interval_converged = converged;
+      std::tie(a_l, a_u) = a;
+      std::tie(f_l, f_u) = f;
+      std::tie(g_l, g_u) = g;
     } else {
       // Update interval end points using Modified Updating Algorithm [More, Thuente 1994]
-      interval_converged = updateIntervalMT(
-        a_l, f_l, g_l,
-        a_u, f_u, g_u,
+      const auto [converged, a, f, g] = updateIntervalMT(
+        std::make_pair(a_l, a_u),
+        std::make_pair(f_l, f_u),
+        std::make_pair(g_l, g_u),
         a_t, phi_t, d_phi_t);
+      interval_converged = converged;
+      std::tie(a_l, a_u) = a;
+      std::tie(f_l, f_u) = f;
+      std::tie(g_l, g_u) = g;
     }
 
     step_iterations++;
