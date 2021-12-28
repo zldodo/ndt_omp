@@ -472,53 +472,6 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
   return {gradient, hessian, score};
 }
 
-Eigen::Matrix<double, 3, 6> computePointGradient(
-  const Eigen::Matrix<double, 8, 3> & j_ang,
-  const Eigen::Vector3d & x)
-{
-  Eigen::Matrix<double, 3, 6> point_gradient_ = Eigen::Matrix<double, 3, 6>::Zero();
-  // Calculate first derivative of Transformation Equation 6.17 w.r.t. transform vector p.
-  // Derivative w.r.t. ith element of transform vector corresponds to column i,
-  // Equation 6.18 and 6.19 [Magnusson 2009]
-  point_gradient_(1, 3) = x.dot(j_ang.row(0));
-  point_gradient_(2, 3) = x.dot(j_ang.row(1));
-  point_gradient_(0, 4) = x.dot(j_ang.row(2));
-  point_gradient_(1, 4) = x.dot(j_ang.row(3));
-  point_gradient_(2, 4) = x.dot(j_ang.row(4));
-  point_gradient_(0, 5) = x.dot(j_ang.row(5));
-  point_gradient_(1, 5) = x.dot(j_ang.row(6));
-  point_gradient_(2, 5) = x.dot(j_ang.row(7));
-  return point_gradient_;
-}
-
-Eigen::Matrix<double, 18, 6> computePointHessian(
-  const Eigen::Matrix<double, 15, 3> & h_ang,
-  const Eigen::Vector3d & x)
-{
-  // Vectors from Equation 6.21 [Magnusson 2009]
-  const Eigen::Vector3d a(0, x.dot(h_ang.row(0)), x.dot(h_ang.row(1)));
-  const Eigen::Vector3d b(0, x.dot(h_ang.row(2)), x.dot(h_ang.row(3)));
-  const Eigen::Vector3d c(0, x.dot(h_ang.row(4)), x.dot(h_ang.row(5)));
-  const Eigen::Vector3d d(x.dot(h_ang.row(6)), x.dot(h_ang.row(7)), x.dot(h_ang.row(8)));
-  const Eigen::Vector3d e(x.dot(h_ang.row(9)), x.dot(h_ang.row(10)), x.dot(h_ang.row(11)));
-  const Eigen::Vector3d f(x.dot(h_ang.row(12)), x.dot(h_ang.row(13)), x.dot(h_ang.row(14)));
-
-  // Calculate second derivative of Transformation Equation 6.17 w.r.t. transform vector p.
-  // Derivative w.r.t. ith and jth elements of transform vector corresponds to
-  // the 3x1 block matrix starting at (3i,j), Equation 6.20 and 6.21 [Magnusson 2009]
-  Eigen::Matrix<double, 18, 6> point_hessian_ = Eigen::Matrix<double, 18, 6>::Zero();
-  point_hessian_.block<3, 1>(9, 3) = a;
-  point_hessian_.block<3, 1>(12, 3) = b;
-  point_hessian_.block<3, 1>(15, 3) = c;
-  point_hessian_.block<3, 1>(9, 4) = b;
-  point_hessian_.block<3, 1>(12, 4) = d;
-  point_hessian_.block<3, 1>(15, 4) = e;
-  point_hessian_.block<3, 1>(9, 5) = c;
-  point_hessian_.block<3, 1>(12, 5) = e;
-  point_hessian_.block<3, 1>(15, 5) = f;
-  return point_hessian_;
-}
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<typename PointSource, typename PointTarget>
 Matrix6d pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeHessian(
@@ -563,16 +516,10 @@ Matrix6d pclomp::NormalDistributionsTransform<PointSource, PointTarget>::compute
       // Uses precomputed covariance for speed.
       const Eigen::Matrix3d c_inv = cell->getInverseCov();
 
-      Eigen::Matrix<double, 3, 6> point_gradient_;
-      Eigen::Matrix<double, 18, 6> point_hessian_;
-      point_gradient_.setZero();
-      point_gradient_.block<3, 3>(0, 0).setIdentity();
-      point_hessian_.setZero();
-
       // Compute derivative of transform function w.r.t. transform vector,
       // J_E and H_E in Equations 6.18 and 6.20 [Magnusson 2009]
-      point_gradient_ = computePointGradient(j_ang, x);
-      point_hessian_ = computePointHessian(h_ang, x);
+      const Eigen::Matrix<double, 3, 6> point_gradient_ = computePointGradient(x, j_ang);
+      const Eigen::Matrix<double, 18, 6> point_hessian_ = computePointHessian(x, h_ang);
       // Update hessian, lines 21 in Algorithm 2,
       // according to Equations 6.10, 6.12 and 6.13, respectively [Magnusson 2009]
       updateHessian(hessian, point_gradient_, point_hessian_, x_trans, c_inv);
