@@ -522,7 +522,7 @@ Matrix6d pclomp::NormalDistributionsTransform<PointSource, PointTarget>::compute
       const Eigen::Matrix<double, 18, 6> point_hessian_ = computePointHessian(x, h_ang);
       // Update hessian, lines 21 in Algorithm 2,
       // according to Equations 6.10, 6.12 and 6.13, respectively [Magnusson 2009]
-      updateHessian(hessian, point_gradient_, point_hessian_, x_trans, c_inv);
+      hessian += updateHessian(point_gradient_, point_hessian_, x_trans, c_inv);
     }
   }
   return hessian;
@@ -530,9 +530,7 @@ Matrix6d pclomp::NormalDistributionsTransform<PointSource, PointTarget>::compute
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<typename PointSource, typename PointTarget>
-void
-pclomp::NormalDistributionsTransform<PointSource, PointTarget>::updateHessian(
-  Matrix6d & hessian,
+Matrix6d pclomp::NormalDistributionsTransform<PointSource, PointTarget>::updateHessian(
   const Eigen::Matrix<double, 3, 6> & point_gradient_,
   const Eigen::Matrix<double, 18, 6> & point_hessian_,
   const Eigen::Vector3d & x_trans,
@@ -542,14 +540,10 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::updateHessian(
   // e^(-d_2/2 * (x_k - mu_k)^T Sigma_k^-1 (x_k - mu_k)) Equation 6.9 [Magnusson 2009]
   double e_x_cov_x = gauss_d2_ * exp(-gauss_d2_ * x_trans.dot(c_inv * x_trans) / 2);
 
-  // Error checking for invalid values.
-  if (e_x_cov_x > 1 || e_x_cov_x < 0 || e_x_cov_x != e_x_cov_x) {
-    return;
-  }
-
   // Reusable portion of Equation 6.12 and 6.13 [Magnusson 2009]
   e_x_cov_x *= gauss_d1_;
 
+  Matrix6d hessian = Matrix6d::Zero();
   for (int i = 0; i < 6; i++) {
     // Sigma_k^-1 d(T(x,p))/dpi, Reusable portion of Equation 6.12 and 6.13 [Magnusson 2009]
     cov_dxd_pi = c_inv * point_gradient_.col(i);
@@ -562,6 +556,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::updateHessian(
         point_gradient_.col(j).dot(cov_dxd_pi) );
     }
   }
+  return hessian;
 }
 
 std::tuple<bool, std::pair<double, double>, std::pair<double, double>, std::pair<double, double>>

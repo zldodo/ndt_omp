@@ -311,9 +311,7 @@ protected:
    * \param[in] x_trans transformed point minus mean of occupied covariance voxel
    * \param[in] c_inv covariance of occupied covariance voxel
    */
-  void
-  updateHessian(
-    Eigen::Matrix<double, 6, 6> & hessian,
+  Eigen::Matrix<double, 6, 6> updateHessian(
     const Eigen::Matrix<double, 3, 6> & point_gradient_,
     const Eigen::Matrix<double, 18, 6> & point_hessian_,
     const Eigen::Vector3d & x_trans, const Eigen::Matrix3d & c_inv) const;
