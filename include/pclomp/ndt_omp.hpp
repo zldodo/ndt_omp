@@ -305,17 +305,6 @@ protected:
       const Eigen::Matrix<double, 15, 3> & h_ang,
       const PointCloudSource & trans_cloud) const;
 
-  /** \brief Compute individual point contributions to hessian of probability function w.r.t. the transformation vector.
-   * \note Equation 6.13 [Magnusson 2009].
-   * \param[in,out] hessian the hessian matrix of the probability function w.r.t. the transformation vector
-   * \param[in] x_trans transformed point minus mean of occupied covariance voxel
-   * \param[in] c_inv covariance of occupied covariance voxel
-   */
-  Eigen::Matrix<double, 6, 6> updateHessian(
-    const Eigen::Matrix<double, 3, 6> & point_gradient_,
-    const Eigen::Matrix<double, 18, 6> & point_hessian_,
-    const Eigen::Vector3d & x_trans, const Eigen::Matrix3d & c_inv) const;
-
   /** \brief Compute line search step length and update transform and probability derivatives using More-Thuente method.
    * \note Search Algorithm [More, Thuente 1994]
    * \param[in] x initial transformation vector, \f$ x \f$ in Equation 1.3 (Moore, Thuente 1994) and \f$ \vec{p} \f$ in Algorithm 2 [Magnusson 2009]

@@ -472,6 +472,37 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
   return {gradient, hessian, score};
 }
 
+Matrix6d updateHessian(
+  const Eigen::Matrix<double, 3, 6> & point_gradient_,
+  const Eigen::Matrix<double, 18, 6> & point_hessian_,
+  const Eigen::Vector3d & x_trans,
+  const Eigen::Matrix3d & c_inv,
+  const double gauss_d1_,
+  const double gauss_d2_)
+{
+  Eigen::Vector3d cov_dxd_pi;
+  // e^(-d_2/2 * (x_k - mu_k)^T Sigma_k^-1 (x_k - mu_k)) Equation 6.9 [Magnusson 2009]
+  double e_x_cov_x = gauss_d2_ * exp(-gauss_d2_ * x_trans.dot(c_inv * x_trans) / 2);
+
+  // Reusable portion of Equation 6.12 and 6.13 [Magnusson 2009]
+  e_x_cov_x *= gauss_d1_;
+
+  Matrix6d hessian = Matrix6d::Zero();
+  for (int i = 0; i < 6; i++) {
+    // Sigma_k^-1 d(T(x,p))/dpi, Reusable portion of Equation 6.12 and 6.13 [Magnusson 2009]
+    cov_dxd_pi = c_inv * point_gradient_.col(i);
+
+    for (int j = 0; j < hessian.cols(); j++) {
+      // Update hessian, Equation 6.13 [Magnusson 2009]
+      hessian(i, j) += e_x_cov_x *
+        (-gauss_d2_ * x_trans.dot(cov_dxd_pi) * x_trans.dot(c_inv * point_gradient_.col(j)) +
+        x_trans.dot(c_inv * point_hessian_.block<3, 1>(3 * i, j)) +
+        point_gradient_.col(j).dot(cov_dxd_pi) );
+    }
+  }
+  return hessian;
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<typename PointSource, typename PointTarget>
 Matrix6d pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeHessian(
@@ -522,38 +553,7 @@ Matrix6d pclomp::NormalDistributionsTransform<PointSource, PointTarget>::compute
       const Eigen::Matrix<double, 18, 6> point_hessian_ = computePointHessian(x, h_ang);
       // Update hessian, lines 21 in Algorithm 2,
       // according to Equations 6.10, 6.12 and 6.13, respectively [Magnusson 2009]
-      hessian += updateHessian(point_gradient_, point_hessian_, x_trans, c_inv);
-    }
-  }
-  return hessian;
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<typename PointSource, typename PointTarget>
-Matrix6d pclomp::NormalDistributionsTransform<PointSource, PointTarget>::updateHessian(
-  const Eigen::Matrix<double, 3, 6> & point_gradient_,
-  const Eigen::Matrix<double, 18, 6> & point_hessian_,
-  const Eigen::Vector3d & x_trans,
-  const Eigen::Matrix3d & c_inv) const
-{
-  Eigen::Vector3d cov_dxd_pi;
-  // e^(-d_2/2 * (x_k - mu_k)^T Sigma_k^-1 (x_k - mu_k)) Equation 6.9 [Magnusson 2009]
-  double e_x_cov_x = gauss_d2_ * exp(-gauss_d2_ * x_trans.dot(c_inv * x_trans) / 2);
-
-  // Reusable portion of Equation 6.12 and 6.13 [Magnusson 2009]
-  e_x_cov_x *= gauss_d1_;
-
-  Matrix6d hessian = Matrix6d::Zero();
-  for (int i = 0; i < 6; i++) {
-    // Sigma_k^-1 d(T(x,p))/dpi, Reusable portion of Equation 6.12 and 6.13 [Magnusson 2009]
-    cov_dxd_pi = c_inv * point_gradient_.col(i);
-
-    for (int j = 0; j < hessian.cols(); j++) {
-      // Update hessian, Equation 6.13 [Magnusson 2009]
-      hessian(i, j) += e_x_cov_x *
-        (-gauss_d2_ * x_trans.dot(cov_dxd_pi) * x_trans.dot(c_inv * point_gradient_.col(j)) +
-        x_trans.dot(c_inv * point_hessian_.block<3, 1>(3 * i, j)) +
-        point_gradient_.col(j).dot(cov_dxd_pi) );
+      hessian += updateHessian(point_gradient_, point_hessian_, x_trans, c_inv, gauss_d1_, gauss_d2_);
     }
   }
   return hessian;
