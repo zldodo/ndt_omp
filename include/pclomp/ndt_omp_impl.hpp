@@ -287,6 +287,7 @@ Vector6d computeScoreGradient(
   // Calculate probability of transformed points existence, Equation 6.9 [Magnusson 2009]
   const double score_inc = -d1 * e_x_cov_x;
 
+  // Update gradient, Equation 6.12 [Magnusson 2009]
   const Eigen::Matrix<double, 6, 1> g = x_trans4 * c_inv4 * point_gradient4;
 
   return d1 * d2 * e_x_cov_x * g;
@@ -312,7 +313,6 @@ Matrix6d computeScoreHessian(
   Matrix6d hessian = Matrix6d::Zero();
   for (int i = 0; i < 6; i++) {
     // Sigma_k^-1 d(T(x,p))/dpi, Reusable portion of Equation 6.12 and 6.13 [Magnusson 2009]
-    // Update gradient, Equation 6.12 [Magnusson 2009]
     const Eigen::Matrix<double, 6, 1> h = xc * point_hessian_.block<4, 6>(i * 4, 0);
 
     for (int j = 0; j < hessian.cols(); j++) {
@@ -436,33 +436,34 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
         break;
     }
 
-    // Initialize Point Gradient and Hessian
+    const Eigen::Vector3d x_trans_ref = point_to_vector3d(x_trans_pt);
 
     double s = 0;
-    Vector6d g = Vector6d::Zero();
-    Matrix6d h = Matrix6d::Zero();
+    for (const TargetGridLeafConstPtr cell : neighborhood) {
+      const Eigen::Vector3d x_trans = x_trans_ref - cell->getMean();
+      const Eigen::Matrix3d c_inv = cell->getInverseCov();
+      s += computeScoreIncrement(x_trans, c_inv, gauss_d1_, gauss_d2_);
+    }
+    scores[idx] = s;
 
     const Eigen::Vector3d x = point_to_vector3d(input_->points[idx]);
-    const Eigen::Vector3d x_trans_ref = point_to_vector3d(x_trans_pt);
-    for (const TargetGridLeafConstPtr cell : neighborhood) {
-      // Denorm point, x_k' in Equations 6.12 and 6.13 [Magnusson 2009]
-      const Eigen::Vector3d x_trans = x_trans_ref - cell->getMean();
-      // Uses precomputed covariance for speed.
-      const Eigen::Matrix3d c_inv = cell->getInverseCov();
+    const Eigen::Matrix<double, 4, 6> pg = computePointGradient(x, j_ang);
+    const Eigen::Matrix<double, 24, 6> ph = computePointHessian(x, h_ang);
 
-      // Compute derivative of transform function w.r.t. transform vector,
-      // J_E and H_E in Equations 6.18 and 6.20 [Magnusson 2009]
-      const Eigen::Matrix<double, 4, 6> pg = computePointGradient(x, j_ang);
-      const Eigen::Matrix<double, 24, 6> ph = computePointHessian(x, h_ang);
-      // Update score, gradient and hessian, lines 19-21 in Algorithm 2,
-      // according to Equations 6.10, 6.12 and 6.13, respectively [Magnusson 2009]
-      s += computeScoreIncrement(x_trans, c_inv, gauss_d1_, gauss_d2_);
+    Vector6d g = Vector6d::Zero();
+    for (const TargetGridLeafConstPtr cell : neighborhood) {
+      const Eigen::Vector3d x_trans = x_trans_ref - cell->getMean();
+      const Eigen::Matrix3d c_inv = cell->getInverseCov();
       g += computeScoreGradient(pg, x_trans, c_inv, gauss_d1_, gauss_d2_);
+    }
+    gradients[idx].noalias() = g;
+
+    Matrix6d h = Matrix6d::Zero();
+    for (const TargetGridLeafConstPtr cell : neighborhood) {
+      const Eigen::Vector3d x_trans = x_trans_ref - cell->getMean();
+      const Eigen::Matrix3d c_inv = cell->getInverseCov();
       h += computeScoreHessian(pg, ph, x_trans, c_inv, gauss_d1_, gauss_d2_);
     }
-
-    scores[idx] = s;
-    gradients[idx].noalias() = g;
     hessians[idx].noalias() = h;
   }
 
