@@ -45,6 +45,16 @@
 using Vector6d = Eigen::Matrix<double, 6, 1>;
 using Matrix6d = Eigen::Matrix<double, 6, 6>;
 
+template<typename PointT , typename T>
+pcl::PointCloud<PointT> transformPointCloud(
+    const pcl::PointCloud<PointT> & cloud_in,
+    const T & transform)
+{
+  pcl::PointCloud<PointT> cloud_out;
+  transformPointCloud(cloud_in, cloud_out, transform);
+  return cloud_out;
+}
+
 template<typename PointSource>
 Eigen::Vector3d point_to_vector3d(const PointSource & p)
 {
@@ -117,7 +127,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransform
     // Initialise final transformation to the guessed one
     final_transformation_ = guess;
     // Apply guessed transformation prior to search for neighbours
-    transformPointCloud(output, output, guess);
+    output = transformPointCloud(output, guess);
   }
 
   Eigen::Transform<double, 3, Eigen::Affine, Eigen::ColMajor> eig_transformation;
@@ -783,7 +793,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeStepLengt
   x_t = x + step_dir * a_t;
 
   // New transformed point cloud
-  transformPointCloud(*input_, trans_cloud, makeTransformation(x_t));
+  trans_cloud = transformPointCloud(*input_, makeTransformation(x_t));
 
   // Updates score, gradient and hessian.  Hessian calculation is unnecessary but testing showed that most step calculations use the
   // initial step suggestion and recalculation the reusable portions of the hessian would intail more computation time.
@@ -824,7 +834,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeStepLengt
 
     // New transformed point cloud
     // Done on final cloud to prevent wasted computation
-    transformPointCloud(*input_, trans_cloud, makeTransformation(x_t));
+    trans_cloud = transformPointCloud(*input_, makeTransformation(x_t));
 
     // Updates score, gradient. Values stored to prevent wasted computation.
     std::tie(score_gradient, hessian, score) = computeDerivatives(trans_cloud, x_t, false);
