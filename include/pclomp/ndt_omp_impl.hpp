@@ -642,13 +642,15 @@ updateIntervalMT(
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<typename PointSource, typename PointTarget>
-double
-pclomp::NormalDistributionsTransform<PointSource, PointTarget>::trialValueSelectionMT(
-  double a_l, double f_l, double g_l,
-  double a_u, double f_u, double g_u,
-  double a_t, double f_t, double g_t)
+double trialValueSelectionMT(
+  const std::pair<double, double> & a,
+  const std::pair<double, double> & f,
+  const std::pair<double, double> & g,
+  const double a_t, const double f_t, const double g_t)
 {
+  const auto [a_l, a_u] = a;
+  const auto [f_l, f_u] = f;
+  const auto [g_l, g_u] = g;
   // Case 1 in Trial Value Selection [More, Thuente 1994]
   if (f_t > f_l) {
     // Calculate the minimizer of the cubic that interpolates f_l, f_t, g_l and g_t
@@ -806,13 +808,15 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeStepLengt
     // Use auxiliary function if interval I is not closed
     if (open_interval) {
       a_t = trialValueSelectionMT(
-        a_l, f_l, g_l,
-        a_u, f_u, g_u,
+        std::make_pair(a_l, a_u),
+        std::make_pair(f_l, f_u),
+        std::make_pair(g_l, g_u),
         a_t, psi_t, d_psi_t);
     } else {
       a_t = trialValueSelectionMT(
-        a_l, f_l, g_l,
-        a_u, f_u, g_u,
+        std::make_pair(a_l, a_u),
+        std::make_pair(f_l, f_u),
+        std::make_pair(g_l, g_u),
         a_t, phi_t, d_phi_t);
     }
 
