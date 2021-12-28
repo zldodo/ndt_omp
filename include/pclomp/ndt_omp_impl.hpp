@@ -201,7 +201,7 @@ int omp_get_max_threads() {return 1;}
 int omp_get_thread_num() {return 0;}
 #endif
 
-Eigen::Matrix<double, 4, 6> computePointGradient(
+Eigen::Matrix<double, 3, 6> computePointGradient(
   const Eigen::Vector3d & x,
   const Eigen::Matrix<double, 8, 3> & j_ang)
 {
@@ -210,7 +210,7 @@ Eigen::Matrix<double, 4, 6> computePointGradient(
   // Equation 6.18 and 6.19 [Magnusson 2009]
   Eigen::Matrix<double, 8, 1> y = j_ang * x;
 
-  Eigen::Matrix<double, 4, 6> gradient = Eigen::Matrix<double, 4, 6>::Zero();
+  Eigen::Matrix<double, 3, 6> gradient = Eigen::Matrix<double, 3, 6>::Zero();
   gradient.block<3, 3>(0, 0) = Eigen::Matrix<double, 3, 3>::Identity();
 
   gradient(1, 3) = y(0);
@@ -225,33 +225,33 @@ Eigen::Matrix<double, 4, 6> computePointGradient(
   return gradient;
 }
 
-Eigen::Matrix<double, 24, 6> computePointHessian(
+Eigen::Matrix<double, 18, 6> computePointHessian(
   const Eigen::Vector3d & x,
   const Eigen::Matrix<double, 15, 3> & h_ang)
 {
   Eigen::Matrix<double, 15, 1> y = h_ang * x;
 
   // Vectors from Equation 6.21 [Magnusson 2009]
-  Eigen::Vector4d a(0, y(0), y(1), 0.0f);
-  Eigen::Vector4d b(0, y(2), y(3), 0.0f);
-  Eigen::Vector4d c(0, y(4), y(5), 0.0f);
-  Eigen::Vector4d d(y(6), y(7), y(8), 0.0f);
-  Eigen::Vector4d e(y(9), y(10), y(11), 0.0f);
-  Eigen::Vector4d f(y(12), y(13), y(14), 0.0f);
+  Eigen::Vector3d a(0, y(0), y(1));
+  Eigen::Vector3d b(0, y(2), y(3));
+  Eigen::Vector3d c(0, y(4), y(5));
+  Eigen::Vector3d d(y(6), y(7), y(8));
+  Eigen::Vector3d e(y(9), y(10), y(11));
+  Eigen::Vector3d f(y(12), y(13), y(14));
 
-  Eigen::Matrix<double, 24, 6> hessian = Eigen::Matrix<double, 24, 6>::Zero();
+  Eigen::Matrix<double, 18, 6> hessian = Eigen::Matrix<double, 18, 6>::Zero();
   // Calculate second derivative of Transformation Equation 6.17 w.r.t. transform vector p.
   // Derivative w.r.t. ith and jth elements of transform vector corresponds to
   // the 3x1 block matrix starting at (3i,j), Equation 6.20 and 6.21 [Magnusson 2009]
-  hessian.block<4, 1>(12, 3) = a;
-  hessian.block<4, 1>(16, 3) = b;
-  hessian.block<4, 1>(20, 3) = c;
-  hessian.block<4, 1>(12, 4) = b;
-  hessian.block<4, 1>(16, 4) = d;
-  hessian.block<4, 1>(20, 4) = e;
-  hessian.block<4, 1>(12, 5) = c;
-  hessian.block<4, 1>(16, 5) = e;
-  hessian.block<4, 1>(20, 5) = f;
+  hessian.block<3, 1>(9, 3) = a;
+  hessian.block<3, 1>(12, 3) = b;
+  hessian.block<3, 1>(15, 3) = c;
+  hessian.block<3, 1>(9, 4) = b;
+  hessian.block<3, 1>(12, 4) = d;
+  hessian.block<3, 1>(15, 4) = e;
+  hessian.block<3, 1>(9, 5) = c;
+  hessian.block<3, 1>(12, 5) = e;
+  hessian.block<3, 1>(15, 5) = f;
   return hessian;
 }
 
@@ -269,46 +269,40 @@ double computeScoreIncrement(
 }
 
 Vector6d computeScoreGradient(
-  const Eigen::Matrix<double, 4, 6> & point_gradient4,
+  const Eigen::Matrix<double, 3, 6> & point_gradient,
   const Eigen::Vector3d & x_trans, const Eigen::Matrix3d & c_inv,
   const double d1, const double d2)
 {
-  Eigen::Matrix<double, 1, 4> x_trans4(x_trans[0], x_trans[1], x_trans[2], 0.0f);
-  Eigen::Matrix4d c_inv4 = Eigen::Matrix4d::Zero();
-  c_inv4.topLeftCorner(3, 3) = c_inv;
-
   // e^(-d_2/2 * (x_k - mu_k)^T Sigma_k^-1 (x_k - mu_k)) Equation 6.9 [Magnusson 2009]
-  const double e_x_cov_x = exp(-d2 * x_trans4.dot(x_trans4 * c_inv4) * 0.5f);
+  const double xcx = x_trans.dot(c_inv * x_trans) * 0.5f;
+  const double e_x_cov_x = exp(-d2 * xcx);
   // Calculate probability of transformed points existence, Equation 6.9 [Magnusson 2009]
   const double score_inc = -d1 * e_x_cov_x;
 
   // Update gradient, Equation 6.12 [Magnusson 2009]
-  const Eigen::Matrix<double, 6, 1> g = x_trans4 * c_inv4 * point_gradient4;
+  const Eigen::Matrix<double, 6, 1> g = x_trans.transpose() * c_inv * point_gradient;
 
   return d1 * d2 * e_x_cov_x * g;
 }
 
 Matrix6d computeScoreHessian(
-  const Eigen::Matrix<double, 4, 6> & point_gradient4,
-  const Eigen::Matrix<double, 24, 6> & point_hessian_,
+  const Eigen::Matrix<double, 3, 6> & point_gradient,
+  const Eigen::Matrix<double, 18, 6> & point_hessian_,
   const Eigen::Vector3d & x_trans, const Eigen::Matrix3d & c_inv,
   const double d1, const double d2)
 {
-  Eigen::Matrix<double, 1, 4> x_trans4(x_trans[0], x_trans[1], x_trans[2], 0.0f);
-  Eigen::Matrix4d c_inv4 = Eigen::Matrix4d::Zero();
-  c_inv4.topLeftCorner(3, 3) = c_inv;
-
   // e^(-d_2/2 * (x_k - mu_k)^T Sigma_k^-1 (x_k - mu_k)) Equation 6.9 [Magnusson 2009]
-  const double e_x_cov_x = exp(-d2 * x_trans4.dot(x_trans4 * c_inv4) * 0.5f);
+  const double xcx = x_trans.dot(c_inv * x_trans) * 0.5f;
+  const double e_x_cov_x = exp(-d2 * xcx);
 
-  const Eigen::Matrix<double, 6, 1> g = x_trans4 * c_inv4 * point_gradient4;
-  const Eigen::Matrix<double, 1, 4> xc = x_trans4 * c_inv4;
-  const Eigen::Matrix<double, 6, 6> m = point_gradient4.transpose() * c_inv4 * point_gradient4;
+  const Eigen::Matrix<double, 6, 1> g = x_trans.transpose() * c_inv * point_gradient;
+  const Eigen::Matrix<double, 1, 3> xc = x_trans.transpose() * c_inv;
+  const Eigen::Matrix<double, 6, 6> m = point_gradient.transpose() * c_inv * point_gradient;
 
   Matrix6d hessian = Matrix6d::Zero();
   for (int i = 0; i < 6; i++) {
     // Sigma_k^-1 d(T(x,p))/dpi, Reusable portion of Equation 6.12 and 6.13 [Magnusson 2009]
-    const Eigen::Matrix<double, 6, 1> h = xc * point_hessian_.block<4, 6>(i * 4, 0);
+    const Eigen::Matrix<double, 6, 1> h = xc * point_hessian_.block<3, 6>(i * 3, 0);
 
     for (int j = 0; j < hessian.cols(); j++) {
       // Update hessian, Equation 6.13 [Magnusson 2009]
@@ -444,8 +438,8 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
     scores[idx] = s;
 
     const Eigen::Vector3d x = point_to_vector3d(input_->at(idx));
-    const Eigen::Matrix<double, 4, 6> pg = computePointGradient(x, j_ang);
-    const Eigen::Matrix<double, 24, 6> ph = computePointHessian(x, h_ang);
+    const Eigen::Matrix<double, 3, 6> pg = computePointGradient(x, j_ang);
+    const Eigen::Matrix<double, 18, 6> ph = computePointHessian(x, h_ang);
 
     Vector6d g = Vector6d::Zero();
     for (const TargetGridLeafConstPtr cell : neighborhood) {
