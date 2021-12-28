@@ -782,10 +782,8 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeStepLengt
 
   x_t = x + step_dir * a_t;
 
-  final_transformation_ = makeTransformation(x_t).cast<float>();
-
   // New transformed point cloud
-  transformPointCloud(*input_, trans_cloud, final_transformation_);
+  transformPointCloud(*input_, trans_cloud, makeTransformation(x_t));
 
   // Updates score, gradient and hessian.  Hessian calculation is unnecessary but testing showed that most step calculations use the
   // initial step suggestion and recalculation the reusable portions of the hessian would intail more computation time.
@@ -824,11 +822,9 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeStepLengt
 
     x_t = x + step_dir * a_t;
 
-    final_transformation_ = makeTransformation(x_t).cast<float>();
-
     // New transformed point cloud
     // Done on final cloud to prevent wasted computation
-    transformPointCloud(*input_, trans_cloud, final_transformation_);
+    transformPointCloud(*input_, trans_cloud, makeTransformation(x_t));
 
     // Updates score, gradient. Values stored to prevent wasted computation.
     std::tie(score_gradient, hessian, score) = computeDerivatives(trans_cloud, x_t, false);
@@ -893,6 +889,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeStepLengt
     hessian = computeHessian(j_ang, h_ang, trans_cloud);
   }
 
+  final_transformation_ = makeTransformation(x_t).cast<float>();
   return a_t;
 }
 
