@@ -820,8 +820,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeStepLengt
         a_t, phi_t, d_phi_t);
     }
 
-    a_t = std::min(a_t, step_max);
-    a_t = std::max(a_t, step_min);
+    a_t = std::clamp(a_t, step_min, step_max);
 
     x_t = x + step_dir * a_t;
 
