@@ -123,24 +123,17 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransform
 
   std::tie(gauss_d1_, gauss_d2_, gauss_d3_) = initDistributionParams(outlier_ratio_, resolution_);
 
-  if (guess != Eigen::Matrix4f::Identity()) {
-    // Initialise final transformation to the guessed one
-    final_transformation_ = guess;
-    // Apply guessed transformation prior to search for neighbours
-    output = transformPointCloud(output, guess);
-  }
+  // Initialise final transformation to the guessed one
+  final_transformation_ = guess;
+  // Apply guessed transformation prior to search for neighbours
+  output = transformPointCloud(output, guess);
 
   Eigen::Transform<double, 3, Eigen::Affine, Eigen::ColMajor> eig_transformation;
   eig_transformation.matrix() = final_transformation_.template cast<double>();
-  transformation_array_.clear();
-  transformation_array_.push_back(final_transformation_);
 
   // Convert initial guess matrix to 6 element transformation vector
-  Eigen::Vector3d init_translation = eig_transformation.translation();
-  Eigen::Vector3d init_rotation = eig_transformation.rotation().eulerAngles(0, 1, 2);
-
   Vector6d p;
-  p << init_translation, init_rotation;
+  p << eig_transformation.translation(), eig_transformation.rotation().eulerAngles(0, 1, 2);
 
   Matrix6d hessian;
 
@@ -151,6 +144,8 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransform
   Vector6d score_gradient;
   std::tie(score_gradient, hessian, score) = computeDerivatives(output, p);
 
+  transformation_array_.clear();
+  transformation_array_.push_back(final_transformation_);
   while (!converged_) {
     // Solve for decent direction using newton method, line 23 in Algorithm 2 [Magnusson 2009]
     const Eigen::JacobiSVD<Matrix6d> sv(hessian, Eigen::ComputeFullU | Eigen::ComputeFullV);
