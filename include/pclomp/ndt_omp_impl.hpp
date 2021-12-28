@@ -156,7 +156,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransform
     delta_p_norm = delta_p.norm();
 
     if (delta_p_norm == 0 || delta_p_norm != delta_p_norm) {
-      trans_probability_ = score / static_cast<double>(input_->points.size());
+      trans_probability_ = score / static_cast<double>(input_->size());
       converged_ = delta_p_norm == delta_p_norm;
       return;
     }
@@ -191,7 +191,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransform
 
   // Store transformation probability. The relative differences within each scan registration are accurate
   // but the normalization constants need to be modified for it to be globally accurate
-  trans_probability_ = score / static_cast<double>(input_->points.size());
+  trans_probability_ = score / static_cast<double>(input_->size());
 
   hessian_ = hessian;
 }
@@ -399,19 +399,19 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
 {
   const PointCloudSource trans_cloud = transformPointCloud(input_cloud, makeTransformation(p));
 
-  std::vector<double> scores(input_->points.size());
-  std::vector<Vector6d, Eigen::aligned_allocator<Vector6d>> gradients(input_->points.size());
-  std::vector<Matrix6d, Eigen::aligned_allocator<Matrix6d>> hessians(input_->points.size());
+  std::vector<double> scores(input_->size());
+  std::vector<Vector6d, Eigen::aligned_allocator<Vector6d>> gradients(input_->size());
+  std::vector<Matrix6d, Eigen::aligned_allocator<Matrix6d>> hessians(input_->size());
 
   const Eigen::Matrix<double, 8, 3> j_ang = computeAngularGradient(p.tail(3));
   const Eigen::Matrix<double, 15, 3> h_ang = computeAngularHessian(p.tail(3));
 
   // Update gradient and hessian for each point, line 17 in Algorithm 2 [Magnusson 2009]
 #pragma omp parallel for num_threads(num_threads_) schedule(guided, 8)
-  for (std::size_t idx = 0; idx < input_->points.size(); idx++) {
+  for (std::size_t idx = 0; idx < input_->size(); idx++) {
     int thread_n = omp_get_thread_num();
 
-    PointSource x_trans_pt = trans_cloud.points[idx];
+    const PointSource x_trans_pt = trans_cloud.at(idx);
 
     std::vector<TargetGridLeafConstPtr> neighborhood;
     std::vector<float> distances;
@@ -443,7 +443,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
     }
     scores[idx] = s;
 
-    const Eigen::Vector3d x = point_to_vector3d(input_->points[idx]);
+    const Eigen::Vector3d x = point_to_vector3d(input_->at(idx));
     const Eigen::Matrix<double, 4, 6> pg = computePointGradient(x, j_ang);
     const Eigen::Matrix<double, 24, 6> ph = computePointHessian(x, h_ang);
 
@@ -469,7 +469,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivativ
   double score = 0;
 
   // Ensure that the result is invariant against the summing up order
-  for (std::size_t i = 0; i < input_->points.size(); i++) {
+  for (std::size_t i = 0; i < input_->size(); i++) {
     score += scores[i];
     gradient += gradients[i];
     hessian += hessians[i];
@@ -539,8 +539,8 @@ Matrix6d pclomp::NormalDistributionsTransform<PointSource, PointTarget>::compute
   // Precompute Angular Derivatives unnecessary because only used after regular derivative calculation
 
   // Update hessian for each point, line 17 in Algorithm 2 [Magnusson 2009]
-  for (size_t idx = 0; idx < input_->points.size(); idx++) {
-    const PointSource x_trans_pt = trans_cloud.points[idx];
+  for (size_t idx = 0; idx < input_->size(); idx++) {
+    const PointSource x_trans_pt = trans_cloud.at(idx);
 
     // Find neighbors (Radius search has been experimentally faster than direct neighbor checking.
     std::vector<TargetGridLeafConstPtr> neighborhood;
@@ -561,7 +561,7 @@ Matrix6d pclomp::NormalDistributionsTransform<PointSource, PointTarget>::compute
         break;
     }
 
-    const Eigen::Vector3d x = point_to_vector3d(input_->points[idx]);
+    const Eigen::Vector3d x = point_to_vector3d(input_->at(idx));
     const Eigen::Vector3d x_trans_ref = point_to_vector3d(x_trans_pt);
     for (const TargetGridLeafConstPtr cell : neighborhood) {
       // Denorm point, x_k' in Equations 6.12 and 6.13 [Magnusson 2009]
