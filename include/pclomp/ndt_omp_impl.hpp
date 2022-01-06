@@ -387,7 +387,7 @@ std::tuple<Vector6d, Matrix6d, double>
 pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivatives(
   const PointCloudSource & input_cloud,
   const Vector6d & p,
-  const bool compute_hessian)
+  const bool compute_hessian) const
 {
   const PointCloudSource trans_cloud = transformPointCloud(input_cloud, makeTransformation(p));
 

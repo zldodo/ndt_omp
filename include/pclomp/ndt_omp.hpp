@@ -283,7 +283,7 @@ protected:
   computeDerivatives(
     const PointCloudSource & trans_cloud,
     const Eigen::Matrix<double, 6, 1> & p,
-    const bool compute_hessian = true);
+    const bool compute_hessian = true) const;
 
   /** \brief Precompute angular components of derivatives.
    * \note Equation 6.19 and 6.21 [Magnusson 2009].
