@@ -61,7 +61,6 @@ Eigen::Vector3d point_to_vector3d(const PointSource & p)
   return Eigen::Vector3d(p.x, p.y, p.z);
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<typename PointSource, typename PointTarget>
 pclomp::NormalDistributionsTransform<PointSource, PointTarget>::NormalDistributionsTransform()
 : target_cells_(),
@@ -112,7 +111,6 @@ Eigen::Matrix4d makeTransformation(const Vector6d & v)
   return (t * rx * ry * rz).matrix();
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<typename PointSource, typename PointTarget>
 void
 pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransformation(
@@ -503,7 +501,6 @@ Matrix6d updateHessian(
   return hessian;
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<typename PointSource, typename PointTarget>
 Matrix6d pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeHessian(
   const Eigen::Matrix<double, 8, 3> & j_ang,
@@ -585,7 +582,6 @@ updateIntervalMT(
   return {true, a, f, g};
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 double trialValueSelectionMT(
   const std::pair<double, double> & a,
   const std::pair<double, double> & f,
@@ -668,7 +664,6 @@ double trialValueSelectionMT(
   return a_u + (a_t - a_u) * (w - g_u - z) / (g_t - g_u + 2 * w);
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<typename PointSource, typename PointTarget>
 double
 pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeStepLengthMT(
