@@ -138,8 +138,8 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransform
   double delta_p_norm;
 
   // Calculate derivatives of initial transform vector, subsequent derivative calculations are done in the step length determination.
-  Vector6d score_gradient;
-  std::tie(score_gradient, hessian, score) = computeDerivatives(output, p);
+  Vector6d jacobian;
+  std::tie(jacobian, hessian, score) = computeDerivatives(output, p);
 
   output = transformPointCloud(output, guess);
   transformation_array_.clear();
@@ -148,7 +148,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransform
     // Solve for decent direction using newton method, line 23 in Algorithm 2 [Magnusson 2009]
     const Eigen::JacobiSVD<Matrix6d> sv(hessian, Eigen::ComputeFullU | Eigen::ComputeFullV);
     // Negative for maximization as opposed to minimization
-    Vector6d delta_p = sv.solve(-score_gradient);
+    Vector6d delta_p = sv.solve(-jacobian);
 
     //Calculate step length with guaranteed sufficient decrease [More, Thuente 1994]
     delta_p_norm = delta_p.norm();
@@ -162,7 +162,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransform
     delta_p.normalize();
     delta_p_norm = computeStepLengthMT(
       p, delta_p, delta_p_norm, step_size_,
-      transformation_epsilon_ / 2, score, score_gradient, hessian,
+      transformation_epsilon_ / 2, score, jacobian, hessian,
       output);
     delta_p *= delta_p_norm;
 
@@ -669,14 +669,14 @@ double
 pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeStepLengthMT(
   const Vector6d & x, Vector6d & step_dir, double step_init,
   double step_max,
-  double step_min, double & score, Vector6d & score_gradient,
+  double step_min, double & score, Vector6d & jacobian,
   Matrix6d & hessian,
   PointCloudSource & trans_cloud)
 {
   // Set the value of phi(0), Equation 1.3 [More, Thuente 1994]
   double phi_0 = -score;
   // Set the value of phi'(0), Equation 1.3 [More, Thuente 1994]
-  double d_phi_0 = -(score_gradient.dot(step_dir));
+  double d_phi_0 = -(jacobian.dot(step_dir));
 
   Vector6d x_t;
 
@@ -722,12 +722,12 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeStepLengt
 
   // Updates score, gradient and hessian.  Hessian calculation is unnecessary but testing showed that most step calculations use the
   // initial step suggestion and recalculation the reusable portions of the hessian would intail more computation time.
-  std::tie(score_gradient, hessian, score) = computeDerivatives(*input_, x_t, true);
+  std::tie(jacobian, hessian, score) = computeDerivatives(*input_, x_t, true);
 
   // Calculate phi(alpha_t)
   double phi_t = -score;
   // Calculate phi'(alpha_t)
-  double d_phi_t = -(score_gradient.dot(step_dir));
+  double d_phi_t = -(jacobian.dot(step_dir));
 
   // Calculate psi(alpha_t)
   double psi_t = auxiliaryFunction_PsiMT(a_t, phi_t, phi_0, d_phi_0, mu);
@@ -758,12 +758,12 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeStepLengt
     x_t = x + step_dir * a_t;
 
     // Updates score, gradient. Values stored to prevent wasted computation.
-    std::tie(score_gradient, hessian, score) = computeDerivatives(*input_, x_t, false);
+    std::tie(jacobian, hessian, score) = computeDerivatives(*input_, x_t, false);
 
     // Calculate phi(alpha_t+)
     phi_t = -score;
     // Calculate phi'(alpha_t+)
-    d_phi_t = -(score_gradient.dot(step_dir));
+    d_phi_t = -(jacobian.dot(step_dir));
 
     // Calculate psi(alpha_t+)
     psi_t = auxiliaryFunction_PsiMT(a_t, phi_t, phi_0, d_phi_0, mu);
