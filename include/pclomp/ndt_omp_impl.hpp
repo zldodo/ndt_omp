@@ -688,7 +688,6 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeStepLengt
       // Reverse step direction and calculate optimal step.
       d_phi_0 *= -1;
       step_dir *= -1;
-
     }
   }
 
