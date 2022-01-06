@@ -210,13 +210,6 @@ public:
     return nr_iterations_;
   }
 
-  /** \brief Return the hessian matrix */
-  inline Eigen::Matrix<double, 6, 6>
-  getHessian() const
-  {
-    return hessian_;
-  }
-
   /** \brief Return the transformation array */
   inline const std::vector<Eigen::Matrix4f>
   getFinalTransformationArray() const
@@ -385,7 +378,6 @@ protected:
 
   int num_threads_;
 
-  Eigen::Matrix<double, 6, 6> hessian_;
   std::vector<Eigen::Matrix4f> transformation_array_;
 
 public:

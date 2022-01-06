@@ -190,8 +190,6 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransform
   // Store transformation probability. The relative differences within each scan registration are accurate
   // but the normalization constants need to be modified for it to be globally accurate
   trans_probability_ = score / static_cast<double>(input_->size());
-
-  hessian_ = hessian;
 }
 
 #ifndef _OPENMP
