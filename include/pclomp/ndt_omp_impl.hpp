@@ -114,7 +114,7 @@ Eigen::Matrix4d makeTransformation(const Vector6d & v)
 template<typename PointSource, typename PointTarget>
 void
 pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeTransformation(
-  PointCloudSource & output, const Eigen::Matrix4f & guess)
+  pcl::PointCloud<PointSource> & output, const Eigen::Matrix4f & guess)
 {
   nr_iterations_ = 0;
   converged_ = false;
@@ -383,11 +383,11 @@ Eigen::Matrix<double, 15, 3> computeAngularHessian(const Eigen::Vector3d & angle
 template<typename PointSource, typename PointTarget>
 std::tuple<Vector6d, Matrix6d, double>
 pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivatives(
-  const PointCloudSource & input_cloud,
+  const pcl::PointCloud<PointSource> & input_cloud,
   const Vector6d & p,
   const bool compute_hessian) const
 {
-  const PointCloudSource trans_cloud = transformPointCloud(input_cloud, makeTransformation(p));
+  const pcl::PointCloud<PointSource> trans_cloud = transformPointCloud(input_cloud, makeTransformation(p));
 
   std::vector<double> scores(input_->size());
   std::vector<Vector6d, Eigen::aligned_allocator<Vector6d>> gradients(input_->size());
@@ -503,7 +503,7 @@ template<typename PointSource, typename PointTarget>
 Matrix6d pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeHessian(
   const Eigen::Matrix<double, 8, 3> & j_ang,
   const Eigen::Matrix<double, 15, 3> & h_ang,
-  const PointCloudSource & trans_cloud) const
+  const pcl::PointCloud<PointSource> & trans_cloud) const
 {
   // Initialize Point Gradient and Hessian
 
@@ -669,7 +669,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeStepLengt
   double step_max,
   double step_min, double & score, Vector6d & jacobian,
   Matrix6d & hessian,
-  PointCloudSource & trans_cloud)
+  pcl::PointCloud<PointSource> & trans_cloud)
 {
   // Set the value of phi(0), Equation 1.3 [More, Thuente 1994]
   double phi_0 = -score;
@@ -826,7 +826,7 @@ pclomp::NormalDistributionsTransform<PointSource, PointTarget>::computeStepLengt
 
 template<typename PointSource, typename PointTarget>
 double pclomp::NormalDistributionsTransform<PointSource, PointTarget>::calculateScore(
-  const PointCloudSource & trans_cloud) const
+  const pcl::PointCloud<PointSource> & trans_cloud) const
 {
   double score = 0;
 

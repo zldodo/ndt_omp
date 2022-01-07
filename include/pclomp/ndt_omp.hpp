@@ -72,10 +72,6 @@ template<typename PointSource, typename PointTarget>
 class NormalDistributionsTransform : public pcl::Registration<PointSource, PointTarget>
 {
 protected:
-  typedef typename pcl::Registration<PointSource, PointTarget>::PointCloudSource PointCloudSource;
-  typedef typename PointCloudSource::Ptr PointCloudSourcePtr;
-  typedef typename PointCloudSource::ConstPtr PointCloudSourceConstPtr;
-
   typedef typename pcl::Registration<PointSource, PointTarget>::PointCloudTarget PointCloudTarget;
   typedef typename PointCloudTarget::Ptr PointCloudTargetPtr;
   typedef typename PointCloudTarget::ConstPtr PointCloudTargetConstPtr;
@@ -219,7 +215,7 @@ public:
 
   // negative log likelihood function
   // lower is better
-  double calculateScore(const PointCloudSource & cloud) const;
+  double calculateScore(const pcl::PointCloud<PointSource> & cloud) const;
 
 protected:
   using pcl::Registration<PointSource, PointTarget>::reg_name_;
@@ -242,7 +238,7 @@ protected:
    * \param[out] output the resultant input transformed point cloud dataset
    */
   virtual void
-  computeTransformation(PointCloudSource & output)
+  computeTransformation(pcl::PointCloud<PointSource> & output)
   {
     computeTransformation(output, Eigen::Matrix4f::Identity());
   }
@@ -252,7 +248,7 @@ protected:
    * \param[in] guess the initial gross estimation of the transformation
    */
   virtual void
-  computeTransformation(PointCloudSource & output, const Eigen::Matrix4f & guess);
+  computeTransformation(pcl::PointCloud<PointSource> & output, const Eigen::Matrix4f & guess);
 
   /** \brief Initiate covariance voxel structure. */
   void inline
@@ -274,7 +270,7 @@ protected:
    */
   std::tuple<Eigen::Matrix<double, 6, 1>, Eigen::Matrix<double, 6, 6>, double>
   computeDerivatives(
-    const PointCloudSource & trans_cloud,
+    const pcl::PointCloud<PointSource> & trans_cloud,
     const Eigen::Matrix<double, 6, 1> & p,
     const bool compute_hessian = true) const;
 
@@ -296,7 +292,7 @@ protected:
   Eigen::Matrix<double, 6, 6> computeHessian(
       const Eigen::Matrix<double, 8, 3> & j_ang,
       const Eigen::Matrix<double, 15, 3> & h_ang,
-      const PointCloudSource & trans_cloud) const;
+      const pcl::PointCloud<PointSource> & trans_cloud) const;
 
   /** \brief Compute line search step length and update transform and probability derivatives using More-Thuente method.
    * \note Search Algorithm [More, Thuente 1994]
@@ -320,7 +316,7 @@ protected:
     double & score,
     Eigen::Matrix<double, 6, 1> & score_gradient,
     Eigen::Matrix<double, 6, 6> & hessian,
-    PointCloudSource & trans_cloud);
+    pcl::PointCloud<PointSource> & trans_cloud);
 
   /** \brief Auxiliary function used to determine endpoints of More-Thuente interval.
    * \note \f$ \psi(\alpha) \f$ in Equation 1.6 (Moore, Thuente 1994)
