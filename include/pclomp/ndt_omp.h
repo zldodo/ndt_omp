@@ -268,6 +268,8 @@ namespace pclomp
 		// negative log likelihood function
 		// lower is better
 		double calculateScore(const PointCloudSource& cloud) const;
+		double calculateTransformationProbability(const PointCloudSource& cloud) const;
+		double calculateNearestVoxelTransformationProbability(const PointCloudSource& cloud) const;
 
 	protected:
 
